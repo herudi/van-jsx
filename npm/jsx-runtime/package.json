@@ -1,0 +1,22 @@
+{
+  "name": "jsx-runtime",
+  "description": "",
+  "author": "Herudi",
+  "private": true,
+  "version": "0.0.1",
+  "module": "./esm/index.js",
+  "main": "./cjs/index.js",
+  "types": "./types/index.d.ts",
+  "peerDependencies": {
+    "van-jsx": "^0.0.1"
+  },
+  "license": "MIT",
+  "keywords": [],
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    }
+  }
+}

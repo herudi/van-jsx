@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "outDir": "./npm/types",
+    "esModuleInterop": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": [
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "include": [
+    "./npm/src/**/*.ts"
+  ]
+}

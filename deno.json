@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "build": "deno run -A ./scripts/build.ts",
+    "dev": "deno run -A --watch ./dev/server.ts"
+  },
+  "lint": {
+    "exclude": ["backup/", "dist/", "npm/", "dev/"]
+  },
+  "fmt": {
+    "exclude": ["backup/", "dist/", "npm/"]
+  },
+  "compilerOptions": {
+    "lib": [
+      "deno.window",
+      "dom",
+      "dom.iterable"
+    ]
+  }
+}

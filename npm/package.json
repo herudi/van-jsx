@@ -1,0 +1,59 @@
+{
+  "name": "van-jsx",
+  "description": "A small 1kb JSX libs with vanilla and hooks",
+  "author": "Herudi",
+  "version": "0.0.1",
+  "module": "./esm/index.js",
+  "main": "./cjs/index.js",
+  "unpkg": "./browser/index.js",
+  "types": "./types/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/herudi/van-jsx.git"
+  },
+  "bugs": {
+    "url": "https://github.com/herudi/van-jsx/issues"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "keywords": [
+    "jsx",
+    "small",
+    "fast",
+    "1kb",
+    "no virtual-dom",
+    "react"
+  ],
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "require": "./cjs/index.js",
+      "import": "./esm/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./jsx-runtime/types/index.d.ts",
+      "require": "./jsx-runtime/cjs/index.js",
+      "import": "./jsx-runtime/esm/index.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./jsx-runtime/types/index.d.ts",
+      "require": "./jsx-runtime/cjs/index.js",
+      "import": "./jsx-runtime/esm/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./types/index.d.ts"
+      ],
+      "jsx-runtime": [
+        "./jsx-runtime/types/index.d.ts"
+      ],
+      "jsx-dev-runtime": [
+        "./jsx-runtime/types/index.d.ts"
+      ]
+    }
+  }
+}
