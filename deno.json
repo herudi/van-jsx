@@ -7,7 +7,7 @@
     "exclude": ["backup/", "dist/", "npm/", "dev/"]
   },
   "fmt": {
-    "exclude": ["backup/", "dist/", "npm/"]
+    "exclude": ["backup/", "dist/", "npm/", "dev/dist/"]
   },
   "compilerOptions": {
     "lib": [

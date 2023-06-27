@@ -1,11 +1,15 @@
 # van-jsx
 
-A small 1kb JSX libs with vanilla and hooks.
+[![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.2&badge=)](https://www.npmjs.com/package/van-jsx)
 
-- Blazing-fast. just call `getElementById`.
-- Just-In-Time Render (no need re-render).
+A small 1kb JSX libs for creating UI/SSR with vanilla and hooks.
+
+- Control JSX with vanilla-js and hooks.
 - No virtual-dom.
-- SSR.
+- SSR Ready.
+- TypeScript support out of the box.
 
 ## Install
 
@@ -18,7 +22,7 @@ npm i van-jsx
 ### Deno
 
 ```ts
-import {...} from "https://deno.land/x/van-jsx/mod.ts";
+import {...} from "https://deno.land/x/van_jsx/mod.ts";
 ```
 
 ## Usage
@@ -27,30 +31,24 @@ import {...} from "https://deno.land/x/van-jsx/mod.ts";
 /* @jsx h */
 /* @jsxFrag h.Fragment */
 
-import { h, render, useElement } from "van-jsx";
+import { h, render, use } from "van-jsx";
 
 const Counter = () => {
-  const [btn, Button] = useElement("button");
-  const [count, Count] = useElement("span", 0);
+  const state = { count: 0 };
+  const [btn, Button] = use.button();
+  const [count, Count] = use.span();
 
-  btn.on("click", () => {
-    count.value++;
+  use.mount(() => {
+    // ready to use vanilla.
+    btn.onclick = () => {
+      count.innerText = (state.count += 1).toString();
+    };
   });
-
-  // watch value from count
-  count.watch((newVal) => {
-    console.log("Count Effects", newVal);
-  });
-
-  console.log("only one render");
 
   return (
-    <>
-      <h1>Welcome Counter</h1>
-      <Button>
-        Click Me <Count>{count.value}</Count>
-      </Button>
-    </>
+    <Button>
+      Click Me <Count>{state.count}</Count>
+    </Button>
   );
 };
 
@@ -67,101 +65,122 @@ render(<Counter />, document.getElementById("root"));
 // );
 ```
 
+## State Binding
+
+```jsx
+const Counter = () => {
+  const state = { count: 0 };
+  const [btn, Button] = use.button();
+  const [count, Count] = use.span();
+
+  use.mount(() => {
+    btn.onclick = () => state.count++;
+  });
+
+  use.bind(state, "count", (val) => {
+    count.innerText = val.toString();
+  });
+
+  return (
+    <Button>
+      Click Me <Count>{state.count}</Count>
+    </Button>
+  );
+};
+```
+
 ## SSR
 
 ```jsx
-/* @jsx h */
-/* @jsxFrag h.Fragment */
-
-import { h, renderToString } from "van-jsx";
-
-const str = renderToString(<Counter />);
-
-console.log(str);
-// <h1>Welcome Counter</h1><button>Click Me <span>0</span></button>
+console.log(<Counter />);
+// <button>Click Me <span>0</span></button>
 ```
 
-## Hooks
+## Use
 
-### useElement
+### use.[HTMLElement]
 
-Hook element to markup.
+Hook HTMLElement to markup.
 
-```ts
-useElement(type: string | FC, initValue?: any, template?: (value: any) => JSX.Element);
-```
+### use.element
 
-#### Example Todo App
+Hook HTMLElement / FunctionComponent to markup.
+
+### use.mount
+
+Access Dom after render.
+
+### use.bind
+
+Bind state to UI.
+
+## Options Hook
+
+### Options.elem
+
+Attach where element is created.
 
 ```jsx
-const Todo = () => {
-  const [form, Form] = useElement("form");
-  const [todo, InputTodo] = useElement("input");
-  const [todoList, ListTodo] = useElement(
-    "div",
-    ["todo 1"],
-    (value) => value.map((name) => <li>{name}</li>),
-  );
+options.elem = (data) => {
+  console.log(data);
+};
+```
 
-  form.on("submit", (e) => {
-    e.preventDefault();
-    todoList.value = [todo.value, ...todoList.value];
-    todo.value = "";
+### Options.fc
+
+Attach where FunctionComponent is created.
+
+```jsx
+options.fc = (data) => {
+  console.log(data);
+};
+```
+
+## Example Todo App
+
+```jsx
+const Item: FC<{ name: string }> = (props) => {
+  const [item, TodoItem] = use.li();
+  const [remove, Remove] = use.button();
+
+  use.mount(() => {
+    remove.onclick = () => item.remove();
+  });
+
+  return (
+    <TodoItem>
+      <span>{props.name}</span>
+      <Remove>remove</Remove>
+    </TodoItem>
+  )
+}
+const Todo: FC<{ data: string[] }> = (props) => {
+  // inital state from server
+  const state = { todos: props.data };
+
+  const [form, Form] = use.form();
+  const [input, TodoInput] = use.input();
+  const [list, TodoList] = use.div();
+
+  use.mount(() => {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      list.append(<Item name={input.value}/>);
+      input.value = "";
+      input.focus();
+    };
   });
 
   return (
     <>
       <h1>Welcome Todo</h1>
       <Form>
-        <InputTodo placeholder="text..." />
+        <TodoInput placeholder="text..." />
         <button type="submit">Submit</button>
       </Form>
-      <ListTodo>{todoList.template}</ListTodo>
+      <TodoList>{state.todos.map((name) => <Item name={name}/>)}</TodoList>
     </>
   );
-};
-```
-
-### useId
-
-Hook id to markup.
-
-```ts
-useId(initValue?: any);
-```
-
-### Example
-
-```jsx
-const Foo = () => {
-  const btn = useId();
-
-  btn.on("click", () => {
-    console.log("hello");
-  });
-
-  return <button id={btn}>Click Me</button>;
-};
-```
-
-## Mount
-
-### onMounted
-
-Access Dom after render.
-
-```jsx
-const Foo = () => {
-  const [text, Text] = useElement("h1");
-
-  onMounted(() => {
-    console.log(text.elem);
-
-    // update text
-    text.elem.innerText = "Foobarbaz";
-  });
-
-  return <Text>Foobar</Text>;
 };
 ```
 

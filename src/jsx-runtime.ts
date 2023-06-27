@@ -1,4 +1,6 @@
-import { Fragment, h, TRet } from "./index.ts";
+import { Fragment, h } from "./index.ts";
+// deno-lint-ignore no-explicit-any
+type TRet = any;
 
 type CrateElement = (type: TRet, props: TRet, ...args: TRet) => TRet;
 const createElement: CrateElement = (type, props) => {

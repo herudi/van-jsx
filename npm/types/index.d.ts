@@ -12,41 +12,58 @@ type JsxProps = {
 };
 export type FC<T extends unknown = unknown> = (props: JsxProps & T) => JSX.Element;
 type MountedCallback = () => void;
-export interface Hook<T, V> {
-    __watcher: Watchers<V>;
-    __idx: number;
+type HookId<T = HTMLElement> = {
     id: string;
-    each: <K = HTMLElement>(callback: (node: K) => void) => void;
-    value: V;
-    elem: T;
-    watch: (callback: (value: V) => void) => void;
-    on: <K extends keyof HTMLElementEventMap>(type: K, listener: EventListenerOrEventListenerObject) => void;
-}
-interface HookElement<T, V> extends Hook<T, V> {
-    template: JSX.Element;
-}
-type Watchers<V> = ((value: V) => void)[];
-export declare const IS_BROWSER: boolean;
-export declare const isValidElement: (elem: JSX.Element) => any;
-export declare const tick: any;
-export declare function renderToString(component: JSX.Element): string;
-export declare function onMounted(callback: MountedCallback): void;
-export declare function render(component: JSX.Element, root: HTMLElement | null): void;
-export declare function h(type: string | TRet, props: TRet | null | undefined, ...args: TRet): {
-    type: any;
-    props: any;
-    key: any;
-    _t?: undefined;
-} | {
-    type: any;
-    props: any;
-    key: any;
-    _t: () => string;
+} & T;
+type Hooked<T = HTMLElement, F = TRet> = () => [HookId<T>, FC<F>];
+type UseHook = {
+    [k in keyof HTMLElementTagNameMap]: Hooked<HTMLElementTagNameMap[k], HTMLAttributes>;
+} & {
+    element: <T = HTMLElement, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>) => [HookId<T>, FC<F>];
+    bind: <S, K extends keyof S>(state: S, key: K, callback: (val: S[K]) => void) => void;
+    mount: (callback: MountedCallback) => void;
 };
+type Options = {
+    elem?: (elem: JSX.Element) => void;
+    fc?: (elem: JSX.Element) => void;
+};
+export interface HTMLAttributes {
+    accessKey?: string;
+    autoFocus?: boolean;
+    disabled?: boolean;
+    class?: string;
+    className?: string;
+    contentEditable?: boolean | "inherit";
+    contextMenu?: string;
+    dir?: string;
+    draggable?: boolean;
+    hidden?: boolean;
+    id?: string;
+    lang?: string;
+    nonce?: string;
+    placeholder?: string;
+    slot?: string;
+    spellCheck?: boolean;
+    style?: {
+        [k: string]: TRet;
+    } | string;
+    tabIndex?: number;
+    title?: string;
+    translate?: "yes" | "no";
+    dangerouslySetInnerHTML?: {
+        __html: string;
+    };
+    type?: string;
+    name?: string;
+    [k: string]: TRet;
+}
+export declare const options: Options;
+export declare const isValidElement: (elem: JSX.Element) => boolean;
+export declare function render(component: JSX.Element, root: HTMLElement | null): void;
+export declare function h(type: string | TRet, props?: TRet | null | undefined, ...args: TRet): any;
 export declare namespace h {
     var Fragment: FC<unknown>;
 }
 export declare const Fragment: FC;
-export declare function useId<T = HTMLElement, V = TRet>(value?: V): Hook<T, V>;
-export declare function useElement<T = HTMLElement, V = TRet, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>, value?: V, template?: (value: V) => JSX.Element): [HookElement<T, V>, FC<F>];
+export declare const use: UseHook;
 export {};

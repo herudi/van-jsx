@@ -17,227 +17,262 @@ export type FC<T extends unknown = unknown> = (
   props: JsxProps & T,
 ) => JSX.Element;
 type MountedCallback = () => void;
-export interface Hook<T, V> {
-  __watcher: Watchers<V>;
-  __idx: number;
+type HookId<T = HTMLElement> = {
   id: string;
-  each: <K = HTMLElement>(callback: (node: K) => void) => void;
-  value: V;
-  elem: T;
-  watch: (callback: (value: V) => void) => void;
-  on: <K extends keyof HTMLElementEventMap>(
-    type: K,
-    listener: EventListenerOrEventListenerObject,
-  ) => void;
-}
-interface HookElement<T, V> extends Hook<T, V> {
-  template: JSX.Element;
-}
-type Watchers<V> = ((value: V) => void)[];
-const token = ":_",
-  shimFn = () => {},
-  emreg =
-    /area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr/;
-let idx = 0;
-export const IS_BROWSER = typeof document !== "undefined";
-const dangerHTML = "dangerouslySetInnerHTML";
-const isFunc = (val: TRet) => typeof val === "function";
-export const isValidElement = (elem: JSX.Element) =>
-  typeof elem === "object" && elem.type && elem.props;
-export const tick = Promise.prototype.then.bind(Promise.resolve());
-export function renderToString(component: JSX.Element): string {
-  if (isFunc(component)) component = component();
-  if (typeof component !== "object" || !component) return component;
-  if (component._t) component = component._t();
-  const toArray = (res: TRet) => {
-    const arr = [];
-    for (let i = 0; i < res.length; i++) {
-      arr.push(renderToString(res[i]));
-    }
-    return arr.flat().join("");
-  };
-  if (Array.isArray(component)) return toArray(component);
-  if (component && component.props === void 0) return component;
-  const res = component.type(component.props);
-  if (res) {
-    if (res.props !== void 0) return renderToString(res);
-    if (res.pop) return toArray(res);
+} & T;
+type Hooked<T = HTMLElement, F = TRet> = () => [HookId<T>, FC<F>];
+type UseHook =
+  & {
+    [k in keyof HTMLElementTagNameMap]: Hooked<
+      HTMLElementTagNameMap[k],
+      HTMLAttributes
+    >;
   }
-  return res;
+  & {
+    element: <T = HTMLElement, F = TRet>(
+      type: keyof HTMLElementTagNameMap | FC<F>,
+    ) => [HookId<T>, FC<F>];
+    bind: <S, K extends keyof S>(
+      state: S,
+      key: K,
+      callback: (val: S[K]) => void,
+    ) => void;
+    mount: (callback: MountedCallback) => void;
+  };
+type Options = {
+  elem?: (elem: JSX.Element) => void;
+  fc?: (elem: JSX.Element) => void;
+};
+export interface HTMLAttributes {
+  accessKey?: string;
+  autoFocus?: boolean;
+  disabled?: boolean;
+  class?: string;
+  className?: string;
+  contentEditable?: boolean | "inherit";
+  contextMenu?: string;
+  dir?: string;
+  draggable?: boolean;
+  hidden?: boolean;
+  id?: string;
+  lang?: string;
+  nonce?: string;
+  placeholder?: string;
+  slot?: string;
+  spellCheck?: boolean;
+  style?: { [k: string]: TRet } | string;
+  tabIndex?: number;
+  title?: string;
+  translate?: "yes" | "no";
+  dangerouslySetInnerHTML?: {
+    __html: string;
+  };
+  type?: string;
+  name?: string;
+  [k: string]: TRet;
 }
-
-export function onMounted(callback: MountedCallback) {
-  if (IS_BROWSER) tick(() => callback());
-}
-
+const IS_BROWSER = typeof document !== "undefined";
+const dangerHTML = "dangerouslySetInnerHTML";
+const isFunc = <T>(val: T) => typeof val === "function";
+const isString = <T>(val: T) => typeof val === "string";
+const isObject = <T>(val: T) => typeof val === "object";
+const isValue = <T>(val: T) => val != null;
+const doc = IS_BROWSER ? document : {} as Document;
+let idx = 0;
+export const options = {} as Options;
+export const isValidElement = (elem: JSX.Element) => {
+  return IS_BROWSER
+    ? elem instanceof HTMLElement
+    : (isString(elem) && elem[0] === "<");
+};
+const wait = Promise.prototype.then.bind(Promise.resolve());
+const toStyle = (val: Record<string, TRet>) => {
+  return Object.keys(val).reduce(
+    (a, b) =>
+      a +
+      b
+        .split(/(?=[A-Z])/)
+        .join("-")
+        .toLowerCase() +
+      ":" +
+      (typeof val[b] === "number" ? val[b] + "px" : val[b]) +
+      ";",
+    "",
+  );
+};
 export function render(
   component: JSX.Element,
   root: HTMLElement | null,
 ) {
-  const res = renderToString(component);
-  if (root) root.innerHTML = res;
+  if (root) {
+    if (component.pop) {
+      component.forEach((child: ChildNode) => {
+        root.append(child);
+      });
+    } else {
+      root.append(component);
+    }
+  }
 }
 export function h(
   type: string | TRet,
-  props: TRet | null | undefined,
+  props?: TRet | null | undefined,
   ...args: TRet
 ) {
   props ||= {};
-  // delete ID from unique if SSR
-  if (IS_BROWSER === false && typeof props.id === "object") {
-    delete props.id;
-  }
-  type ||= "";
-  if (type._t) type = type._t();
-  const children = args.map((
+  if (props.children) args = args.concat(props.children);
+  const children = args.flat().map((
     el: TRet,
-  ) => (typeof el === "number" ? String(el) : el))
-    .filter(Boolean);
-  if (children.length) props.children = children.flat();
+  ) => (typeof el === "number" ? String(el) : el)).filter(Boolean);
+  if (options.elem) options.elem({ props, type });
   if (isFunc(type)) {
-    return { type, props, key: void 0 };
+    if (children.length) {
+      props.children = IS_BROWSER ? children : children.join("");
+    }
+    if (options.fc) options.fc({ props, type });
+    return type(props);
   }
-  let str = `<${type}`;
-  for (let k in props) {
+  let elem = IS_BROWSER ? doc.createElement(type) : `<${type}`;
+  for (const k in props) {
     let val = props[k];
-    if (k === "className") k = "class";
-    if (IS_BROWSER && (val === void 0 || val === null)) val = "";
     if (
-      val !== void 0 &&
-      val !== null &&
+      isValue(val) &&
       k !== dangerHTML &&
-      k !== "children"
+      k !== "children" &&
+      !isFunc(val)
     ) {
-      const tp = typeof val;
-      const key = k.toLowerCase();
-      if (tp === "function" || tp === "boolean" || tp === "object") {
-        if (!key.startsWith("__")) {
-          if (tp === "object") {
-            if (key === "id") {
-              str += ` ${key}="${val.id}"`;
-            } else {
-              str += ` ${k}="${
-                Object.keys(val).reduce(
-                  (a, b) =>
-                    a +
-                    b
-                      .split(/(?=[A-Z])/)
-                      .join("-")
-                      .toLowerCase() +
-                    ":" +
-                    (typeof val[b] === "number" ? val[b] + "px" : val[b]) +
-                    ";",
-                  "",
-                )
-              }"`;
-            }
-          } else if (val === true) str += ` ${k}`;
-          else if (val === false) str += "";
-        }
-      } else {
-        str += ` ${key}="${val}"`;
+      val = isObject(val)
+        ? toStyle(val)
+        : val === true
+        ? ""
+        : val === false
+        ? null
+        : val;
+      if (isValue(val)) {
+        let key = k.toLowerCase();
+        if (key === "classname") key = "class";
+        if (IS_BROWSER) elem.setAttribute(key, val);
+        else elem += ` ${key}${val === "" ? "" : `="${val}"`}`;
       }
     }
   }
-  str += ">";
-  if (emreg.test(type)) return { type, props, key: void 0, _t: () => str };
-  if (props[dangerHTML]) {
-    str += props[dangerHTML].__html;
-  } else {
-    for (let i = 0; i < children.length; i++) {
-      const child = renderToString(children[i]);
-      if (typeof child === "string") str += child;
-    }
+  if (!IS_BROWSER) {
+    elem += ">";
+    if (
+      /area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr/
+        .test(type)
+    ) return elem;
   }
-  str += type ? `</${type}>` : "";
-  return { type, props, key: void 0, _t: () => str };
+  if (props[dangerHTML]) {
+    const val = props[dangerHTML].__html;
+    if (IS_BROWSER) elem.innerHTML = val;
+    else elem += val;
+  } else {
+    children.forEach((child: TRet) => {
+      if (isValue(child)) {
+        if (IS_BROWSER) elem.append(child);
+        else if (isString(child)) elem += child;
+        else if (child.pop) elem += child.join("");
+      }
+    });
+  }
+  return IS_BROWSER ? elem : (elem += type ? `</${type}>` : "");
 }
 export const Fragment: FC = (props) => props.children;
 
 h.Fragment = Fragment;
 
-export function useId<T = HTMLElement, V = TRet>(value?: V): Hook<T, V> {
+function createHook<T = HTMLElement>(): HookId<T> {
   if (IS_BROWSER) {
     idx--;
-    const id = token + idx;
-    return {
-      __idx: 0,
-      __watcher: [],
+    const id = ":" + idx;
+    const elem: TRet = () =>
+      doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
+    let _idx = 0;
+    const each = (callback: (elem: T, i: number) => void) => {
+      if (_idx < 2) {
+        callback(elem(), 0);
+      } else {
+        doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
+          (node, i) => {
+            callback(node as T, i);
+          },
+        );
+      }
+    };
+    const toEach = (cb: (node: TRet) => void) => {
+      each((node: TRet, i) => {
+        if (node) {
+          cb(node);
+          node.index = i;
+        }
+      });
+    };
+    const hook = {
       get id() {
-        this.__idx++;
+        _idx++;
         return id;
       },
-      get elem() {
-        return document.getElementById(id) as T;
-      },
-      get value() {
-        return value;
-      },
-      set value(v) {
-        value = v;
-        this.__watcher.forEach((fn) => fn(value as TRet));
-      },
-      each(callback) {
-        if (this.__idx < 2) {
-          callback(this.elem as TRet);
-        } else {
-          document.querySelectorAll(`[id="${id}"]`).forEach((node) => {
-            callback(node as TRet);
-          });
-        }
-      },
-      watch(callback) {
-        this.__watcher.push(callback);
-      },
-      on(type, listener) {
-        tick(() => {
-          const key = "on" + type;
-          this.each((elem: TRet) => {
-            elem[key] = listener;
-          });
-        });
-      },
-    } as Hook<T, V>;
+    } as TRet;
+    return Object.setPrototypeOf(
+      hook,
+      new Proxy({}, {
+        get: (_, prop, rec) => {
+          if (isString(prop)) {
+            const el = elem() || {};
+            if (isFunc(el[prop])) {
+              return (...args: TRet) => toEach((node) => node[prop](...args));
+            }
+            if (isValue(el[prop])) return el[prop];
+          }
+          return rec;
+        },
+        set: (_, prop, val) => {
+          if (isString(prop)) {
+            toEach((node) => {
+              node[prop] = val;
+            });
+          }
+          return true;
+        },
+      }),
+    ) as HookId<T>;
   }
-  return { watch: shimFn, on: shimFn, each: shimFn } as TRet;
+  return {} as TRet;
 }
-
-export function useElement<T = HTMLElement, V = TRet, F = TRet>(
+function createElement<T = HTMLElement, F = TRet>(
   type: keyof HTMLElementTagNameMap | FC<F>,
-  value?: V,
-  template?: (value: V) => JSX.Element,
-): [HookElement<T, V>, FC<F>] {
-  const hook = useId<T, V>(value) as HookElement<T, V>;
-  const noTemplate = template === undefined;
-  const hasInner = typeof type === "string" && emreg.test(type) === false;
-  if (type === "input") {
-    hook.watch((val: TRet) => {
-      hook.each((elem: TRet) => {
-        if (typeof val === "number") val = val.toString();
-        elem.value = val;
-      });
-    });
-    tick(() => {
-      hook.each((elem) => {
-        elem.onchange = (e: TRet) => {
-          hook.value = e.target.value;
-        };
-      });
-    });
-  } else if (hasInner) {
-    hook.watch((val: TRet) => {
-      hook.each((elem) => {
-        if (noTemplate) {
-          elem.innerText = val.toString();
-        } else {
-          elem.innerHTML = renderToString(template(val));
-        }
-      });
-    });
-  }
-  hook.template = noTemplate ? value : template(value as V);
+): [HookId<T>, FC<F>] {
+  const hook = createHook<T>();
   return [hook, (props: TRet) => {
-    props.id = hook.id;
-    return h(type, props, ...(props.children || []));
+    if (isValue(props.id)) props.ref = hook.id;
+    else props.id = hook.id;
+    return h(type, props);
   }];
 }
+export const use: UseHook = Object.setPrototypeOf(
+  {
+    element: createElement,
+    bind: <S, K extends keyof S>(
+      state: S,
+      key: K,
+      cb: (val: S[K]) => void,
+    ) => {
+      let val = state[key];
+      Object.defineProperty(state, key, {
+        get: () => val,
+        set: (v) => cb(val = v),
+      });
+    },
+    mount: (cb: MountedCallback) => {
+      if (IS_BROWSER) wait(cb);
+      return cb;
+    },
+  },
+  new Proxy({}, {
+    get: (_, prop: keyof HTMLElementTagNameMap, rec) => () => {
+      if (isString(prop)) return createElement(prop);
+      return rec;
+    },
+  }),
+) as TRet;

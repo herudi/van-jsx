@@ -2,7 +2,7 @@ import * as esbuild from "https://deno.land/x/esbuild@v0.18.2/mod.js";
 import { emptyDir } from "https://deno.land/std@0.167.0/fs/empty_dir.ts";
 import { getNames, replaceTs } from "./convert.ts";
 
-const VERSION = "0.0.1";
+const VERSION = "0.0.2";
 
 await emptyDir("npm");
 await Deno.mkdir("npm/src", { recursive: true });
@@ -108,7 +108,8 @@ Deno.writeTextFileSync(
   JSON.stringify(
     {
       "name": "van-jsx",
-      "description": "A small 1kb JSX libs with vanilla and hooks",
+      "description":
+        "A small 1kb JSX libs for creating UI/SSR with vanilla and hooks",
       "author": "Herudi",
       "version": VERSION,
       "module": "./esm/index.js",
