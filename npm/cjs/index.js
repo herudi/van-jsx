@@ -69,7 +69,7 @@ function render(elem, root) {
 }
 function h(type, props, ...args) {
   props || (props = {});
-  if (props.children)
+  if (isValue(props.children))
     args = args.concat(props.children);
   const children = args.flat().map((el) => typeof el === "number" ? String(el) : el).filter(Boolean);
   if (options.elem)

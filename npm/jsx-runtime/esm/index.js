@@ -1,7 +1,8 @@
 import { Fragment, h } from "van-jsx";
 const createElement = (type, props) => {
-  const children = props.children || [];
-  if (props.children)
+  const hasChild = props.children != null;
+  const children = hasChild ? props.children : [];
+  if (hasChild)
     delete props.children;
   const arr = children.pop ? children : [children];
   return h(type, props, ...arr);
@@ -9,6 +10,7 @@ const createElement = (type, props) => {
 export {
   Fragment,
   createElement as jsx,
+  createElement as jsxDEV,
   createElement as jsxDev,
   createElement as jsxs
 };

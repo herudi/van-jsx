@@ -19,14 +19,16 @@ var jsx_runtime_exports = {};
 __export(jsx_runtime_exports, {
   Fragment: () => import_index.Fragment,
   jsx: () => createElement,
+  jsxDEV: () => createElement,
   jsxDev: () => createElement,
   jsxs: () => createElement
 });
 module.exports = __toCommonJS(jsx_runtime_exports);
 var import_index = require("van-jsx");
 const createElement = (type, props) => {
-  const children = props.children || [];
-  if (props.children)
+  const hasChild = props.children != null;
+  const children = hasChild ? props.children : [];
+  if (hasChild)
     delete props.children;
   const arr = children.pop ? children : [children];
   return (0, import_index.h)(type, props, ...arr);

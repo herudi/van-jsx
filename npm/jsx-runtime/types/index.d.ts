@@ -6,3 +6,4 @@ export { Fragment };
 export { createElement as jsx };
 export { createElement as jsxs };
 export { createElement as jsxDev };
+export { createElement as jsxDEV };

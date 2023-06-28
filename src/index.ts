@@ -129,7 +129,7 @@ export function h(
   ...args: TRet
 ) {
   props ||= {};
-  if (props.children) args = args.concat(props.children);
+  if (isValue(props.children)) args = args.concat(props.children);
   const children = args.flat().map((
     el: TRet,
   ) => (typeof el === "number" ? String(el) : el)).filter(Boolean);
