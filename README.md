@@ -2,14 +2,14 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.2&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.3&badge=)](https://www.npmjs.com/package/van-jsx)
 
-A small 1kb JSX libs for creating UI/SSR with vanilla and hooks.
+A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
 
 - Control JSX with vanilla-js and hooks.
-- No virtual-dom.
-- SSR Ready.
+- Fast SSR without rehydration or re-render.
 - TypeScript support out of the box.
+- No virtual-dom.
 
 ## Install
 
@@ -65,6 +65,36 @@ render(<Counter />, document.getElementById("root"));
 // );
 ```
 
+## SSR
+
+```jsx
+/* @jsx h */
+/* @jsxFrag h.Fragment */
+
+import { h, renderSSR, rewind } from "van-jsx";
+import App from "./app.tsx";
+
+// example using express
+app.get("/", (req, res) => {
+  const html = renderSSR(
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>My App</title>
+      </head>
+      <body>
+        <App />
+        <script src="/client.js"></script>
+      </body>
+    </html>,
+  );
+  res.send(html);
+});
+
+// on the client interactive
+rewind(<App />);
+```
+
 ## State Binding
 
 ```jsx
@@ -87,13 +117,6 @@ const Counter = () => {
     </Button>
   );
 };
-```
-
-## SSR
-
-```jsx
-console.log(<Counter />);
-// <button>Click Me <span>0</span></button>
 ```
 
 ## Use

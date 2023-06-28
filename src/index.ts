@@ -71,7 +71,7 @@ export interface HTMLAttributes {
   name?: string;
   [k: string]: TRet;
 }
-const IS_BROWSER = typeof document !== "undefined";
+export const IS_BROWSER = typeof document !== "undefined";
 const dangerHTML = "dangerouslySetInnerHTML";
 const isFunc = <T>(val: T) => typeof val === "function";
 const isString = <T>(val: T) => typeof val === "string";
@@ -100,17 +100,26 @@ const toStyle = (val: Record<string, TRet>) => {
     "",
   );
 };
+export const renderSSR = (
+  template: JSX.Element | string,
+  doctype?: boolean,
+) => {
+  idx = 0;
+  return doctype !== false ? "<!doctype html>" + template : template;
+};
+export const rewind = (elem: JSX.Element) => elem;
 export function render(
-  component: JSX.Element,
+  elem: JSX.Element,
   root: HTMLElement | null,
 ) {
   if (root) {
-    if (component.pop) {
-      component.forEach((child: ChildNode) => {
+    if (root.hasChildNodes()) root.innerHTML = "";
+    if (elem.pop) {
+      elem.forEach((child: ChildNode) => {
         root.append(child);
       });
     } else {
-      root.append(component);
+      root.append(elem);
     }
   }
 }
@@ -183,37 +192,38 @@ export const Fragment: FC = (props) => props.children;
 h.Fragment = Fragment;
 
 function createHook<T = HTMLElement>(): HookId<T> {
-  if (IS_BROWSER) {
-    idx--;
-    const id = ":" + idx;
-    const elem: TRet = () =>
-      doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
-    let _idx = 0;
-    const each = (callback: (elem: T, i: number) => void) => {
-      if (_idx < 2) {
-        callback(elem(), 0);
-      } else {
-        doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
-          (node, i) => {
-            callback(node as T, i);
-          },
-        );
+  idx--;
+  const id = ":" + idx;
+  const elem: TRet = () =>
+    doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
+  let _idx = 0;
+  const each = (callback: (elem: T, i: number) => void) => {
+    if (_idx < 2) {
+      callback(elem(), 0);
+    } else {
+      doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
+        (node, i) => {
+          callback(node as T, i);
+        },
+      );
+    }
+  };
+  const toEach = (cb: (node: TRet) => void) => {
+    each((node: TRet, i) => {
+      if (node) {
+        cb(node);
+        node.index = i;
       }
-    };
-    const toEach = (cb: (node: TRet) => void) => {
-      each((node: TRet, i) => {
-        if (node) {
-          cb(node);
-          node.index = i;
-        }
-      });
-    };
-    const hook = {
-      get id() {
-        _idx++;
-        return id;
-      },
-    } as TRet;
+    });
+  };
+  const hook = {
+    id,
+    get _id() {
+      _idx++;
+      return id;
+    },
+  } as TRet;
+  if (IS_BROWSER) {
     return Object.setPrototypeOf(
       hook,
       new Proxy({}, {
@@ -238,15 +248,16 @@ function createHook<T = HTMLElement>(): HookId<T> {
       }),
     ) as HookId<T>;
   }
-  return {} as TRet;
+  return hook;
 }
 function createElement<T = HTMLElement, F = TRet>(
   type: keyof HTMLElementTagNameMap | FC<F>,
 ): [HookId<T>, FC<F>] {
   const hook = createHook<T>();
   return [hook, (props: TRet) => {
-    if (isValue(props.id)) props.ref = hook.id;
-    else props.id = hook.id;
+    const id = (<TRet> hook)._id;
+    if (isValue(props.id)) props.ref = id;
+    else props.id = id;
     return h(type, props);
   }];
 }

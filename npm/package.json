@@ -1,8 +1,8 @@
 {
   "name": "van-jsx",
-  "description": "A small 1kb JSX libs for creating UI/SSR with vanilla and hooks",
+  "description": "A small 1kb JSX libs for building SSR/UI with vanilla and hooks.",
   "author": "Herudi",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "module": "./esm/index.js",
   "main": "./cjs/index.js",
   "unpkg": "./browser/index.js",

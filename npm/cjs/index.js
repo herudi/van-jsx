@@ -20,10 +20,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var src_exports = {};
 __export(src_exports, {
   Fragment: () => Fragment,
+  IS_BROWSER: () => IS_BROWSER,
   h: () => h,
   isValidElement: () => isValidElement,
   options: () => options,
   render: () => render,
+  renderSSR: () => renderSSR,
+  rewind: () => rewind,
   use: () => use
 });
 module.exports = __toCommonJS(src_exports);
@@ -46,14 +49,21 @@ var toStyle = (val) => {
     ""
   );
 };
-function render(component, root) {
+var renderSSR = (template, doctype) => {
+  idx = 0;
+  return doctype !== false ? "<!doctype html>" + template : template;
+};
+var rewind = (elem) => elem;
+function render(elem, root) {
   if (root) {
-    if (component.pop) {
-      component.forEach((child) => {
+    if (root.hasChildNodes())
+      root.innerHTML = "";
+    if (elem.pop) {
+      elem.forEach((child) => {
         root.append(child);
       });
     } else {
-      root.append(component);
+      root.append(elem);
     }
   }
 }
@@ -116,36 +126,37 @@ function h(type, props, ...args) {
 var Fragment = (props) => props.children;
 h.Fragment = Fragment;
 function createHook() {
-  if (IS_BROWSER) {
-    idx--;
-    const id = ":" + idx;
-    const elem = () => doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
-    let _idx = 0;
-    const each = (callback) => {
-      if (_idx < 2) {
-        callback(elem(), 0);
-      } else {
-        doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
-          (node, i) => {
-            callback(node, i);
-          }
-        );
-      }
-    };
-    const toEach = (cb) => {
-      each((node, i) => {
-        if (node) {
-          cb(node);
-          node.index = i;
+  idx--;
+  const id = ":" + idx;
+  const elem = () => doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
+  let _idx = 0;
+  const each = (callback) => {
+    if (_idx < 2) {
+      callback(elem(), 0);
+    } else {
+      doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
+        (node, i) => {
+          callback(node, i);
         }
-      });
-    };
-    const hook = {
-      get id() {
-        _idx++;
-        return id;
+      );
+    }
+  };
+  const toEach = (cb) => {
+    each((node, i) => {
+      if (node) {
+        cb(node);
+        node.index = i;
       }
-    };
+    });
+  };
+  const hook = {
+    id,
+    get _id() {
+      _idx++;
+      return id;
+    }
+  };
+  if (IS_BROWSER) {
     return Object.setPrototypeOf(
       hook,
       new Proxy({}, {
@@ -171,15 +182,16 @@ function createHook() {
       })
     );
   }
-  return {};
+  return hook;
 }
 function createElement(type) {
   const hook = createHook();
   return [hook, (props) => {
+    const id = hook._id;
     if (isValue(props.id))
-      props.ref = hook.id;
+      props.ref = id;
     else
-      props.id = hook.id;
+      props.id = id;
     return h(type, props);
   }];
 }
