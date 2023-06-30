@@ -95,15 +95,12 @@ const toStyle = (val: Record<string, TRet>) => {
     "",
   );
 };
-export const renderSSR = (
-  template: JSX.Element | string,
-  doctype?: boolean,
-) => {
+export function resetId() {
   idx = 0;
-  return doctype !== false ? "<!doctype html>" + template : template;
-};
-export const renderToString = (elem: JSX.Element): string =>
-  renderSSR(elem, false);
+}
+export function initSSR() {
+  if (!IS_BROWSER) resetId();
+}
 export function render(
   elem: JSX.Element,
   root: HTMLElement | null,

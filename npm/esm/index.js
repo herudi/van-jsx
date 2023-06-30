@@ -18,11 +18,13 @@ var toStyle = (val) => {
     ""
   );
 };
-var renderSSR = (template, doctype) => {
+function resetId() {
   idx = 0;
-  return doctype !== false ? "<!doctype html>" + template : template;
-};
-var renderToString = (elem) => renderSSR(elem, false);
+}
+function initSSR() {
+  if (!IS_BROWSER)
+    resetId();
+}
 function render(elem, root) {
   if (root) {
     if (root.hasChildNodes())
@@ -184,11 +186,11 @@ export {
   Fragment,
   IS_BROWSER,
   h,
+  initSSR,
   isValidElement,
   options,
   render,
-  renderSSR,
-  renderToString,
+  resetId,
   rewind,
   use
 };

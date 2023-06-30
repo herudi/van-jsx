@@ -22,11 +22,11 @@ __export(src_exports, {
   Fragment: () => Fragment,
   IS_BROWSER: () => IS_BROWSER,
   h: () => h,
+  initSSR: () => initSSR,
   isValidElement: () => isValidElement,
   options: () => options,
   render: () => render,
-  renderSSR: () => renderSSR,
-  renderToString: () => renderToString,
+  resetId: () => resetId,
   rewind: () => rewind,
   use: () => use
 });
@@ -50,11 +50,13 @@ var toStyle = (val) => {
     ""
   );
 };
-var renderSSR = (template, doctype) => {
+function resetId() {
   idx = 0;
-  return doctype !== false ? "<!doctype html>" + template : template;
-};
-var renderToString = (elem) => renderSSR(elem, false);
+}
+function initSSR() {
+  if (!IS_BROWSER)
+    resetId();
+}
 function render(elem, root) {
   if (root) {
     if (root.hasChildNodes())
