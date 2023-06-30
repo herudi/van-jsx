@@ -2,7 +2,7 @@ import * as esbuild from "https://deno.land/x/esbuild@v0.18.2/mod.js";
 import { emptyDir } from "https://deno.land/std@0.167.0/fs/empty_dir.ts";
 import { getNames, replaceTs } from "./convert.ts";
 
-const VERSION = "0.0.4";
+const VERSION = "0.0.5";
 
 await emptyDir("npm");
 await Deno.mkdir("npm/src", { recursive: true });

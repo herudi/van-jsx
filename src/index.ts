@@ -32,11 +32,6 @@ type UseHook =
     element: <T = HTMLElement, F = TRet>(
       type: keyof HTMLElementTagNameMap | FC<F>,
     ) => [HookId<T>, FC<F>];
-    bind: <S, K extends keyof S>(
-      state: S,
-      key: K,
-      callback: (val: S[K]) => void,
-    ) => void;
     mount: (callback: MountedCallback) => void;
   };
 type Options = {
@@ -107,22 +102,18 @@ export const renderSSR = (
   idx = 0;
   return doctype !== false ? "<!doctype html>" + template : template;
 };
-export const rewind = (elem: JSX.Element) => elem;
+export const renderToString = (elem: JSX.Element): string =>
+  renderSSR(elem, false);
 export function render(
   elem: JSX.Element,
   root: HTMLElement | null,
 ) {
   if (root) {
     if (root.hasChildNodes()) root.innerHTML = "";
-    if (elem.pop) {
-      elem.forEach((child: ChildNode) => {
-        root.append(child);
-      });
-    } else {
-      root.append(elem);
-    }
+    root.append(elem);
   }
 }
+export const rewind = (elem: JSX.Element) => render(elem, null);
 export function h(
   type: string | TRet,
   props?: TRet | null | undefined,
@@ -139,7 +130,13 @@ export function h(
       props.children = IS_BROWSER ? children : children.join("");
     }
     if (options.fc) options.fc({ props, type });
-    return type(props);
+    const res = type(props);
+    if (IS_BROWSER && isValue(res) && res.pop) {
+      const fm = new DocumentFragment();
+      fm.append(...res);
+      return fm;
+    }
+    return res;
   }
   let elem = IS_BROWSER ? doc.createElement(type) : `<${type}`;
   for (const k in props) {
@@ -264,26 +261,14 @@ function createElement<T = HTMLElement, F = TRet>(
 export const use: UseHook = Object.setPrototypeOf(
   {
     element: createElement,
-    bind: <S, K extends keyof S>(
-      state: S,
-      key: K,
-      cb: (val: S[K]) => void,
-    ) => {
-      let val = state[key];
-      Object.defineProperty(state, key, {
-        get: () => val,
-        set: (v) => cb(val = v),
-      });
-    },
     mount: (cb: MountedCallback) => {
       if (IS_BROWSER) wait(cb);
       return cb;
     },
   },
   new Proxy({}, {
-    get: (_, prop: keyof HTMLElementTagNameMap, rec) => () => {
-      if (isString(prop)) return createElement(prop);
-      return rec;
+    get: (_, prop: keyof HTMLElementTagNameMap) => () => {
+      return createElement(prop);
     },
   }),
 ) as TRet;

@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.4&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.5&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
 
@@ -95,30 +95,6 @@ app.get("/", (req, res) => {
 rewind(<App />);
 ```
 
-## State Binding
-
-```jsx
-const Counter = () => {
-  const state = { count: 0 };
-  const [btn, Button] = use.button();
-  const [count, Count] = use.span();
-
-  use.mount(() => {
-    btn.onclick = () => state.count++;
-  });
-
-  use.bind(state, "count", (val) => {
-    count.innerText = val.toString();
-  });
-
-  return (
-    <Button>
-      Click Me <Count>{state.count}</Count>
-    </Button>
-  );
-};
-```
-
 ## Use
 
 ### use.[HTMLElement]
@@ -132,10 +108,6 @@ Hook HTMLElement / FunctionComponent to markup.
 ### use.mount
 
 Access Dom after render.
-
-### use.bind
-
-Bind state to UI.
 
 ## Options Hook
 

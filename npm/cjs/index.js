@@ -26,6 +26,7 @@ __export(src_exports, {
   options: () => options,
   render: () => render,
   renderSSR: () => renderSSR,
+  renderToString: () => renderToString,
   rewind: () => rewind,
   use: () => use
 });
@@ -53,20 +54,15 @@ var renderSSR = (template, doctype) => {
   idx = 0;
   return doctype !== false ? "<!doctype html>" + template : template;
 };
-var rewind = (elem) => elem;
+var renderToString = (elem) => renderSSR(elem, false);
 function render(elem, root) {
   if (root) {
     if (root.hasChildNodes())
       root.innerHTML = "";
-    if (elem.pop) {
-      elem.forEach((child) => {
-        root.append(child);
-      });
-    } else {
-      root.append(elem);
-    }
+    root.append(elem);
   }
 }
+var rewind = (elem) => render(elem, null);
 function h(type, props, ...args) {
   props || (props = {});
   if (isValue(props.children))
@@ -80,7 +76,13 @@ function h(type, props, ...args) {
     }
     if (options.fc)
       options.fc({ props, type });
-    return type(props);
+    const res = type(props);
+    if (IS_BROWSER && isValue(res) && res.pop) {
+      const fm = new DocumentFragment();
+      fm.append(...res);
+      return fm;
+    }
+    return res;
   }
   let elem = IS_BROWSER ? doc.createElement(type) : `<${type}`;
   for (const k in props) {
@@ -198,13 +200,6 @@ function createElement(type) {
 var use = Object.setPrototypeOf(
   {
     element: createElement,
-    bind: (state, key, cb) => {
-      let val = state[key];
-      Object.defineProperty(state, key, {
-        get: () => val,
-        set: (v) => cb(val = v)
-      });
-    },
     mount: (cb) => {
       if (IS_BROWSER)
         wait(cb);
@@ -212,10 +207,8 @@ var use = Object.setPrototypeOf(
     }
   },
   new Proxy({}, {
-    get: (_, prop, rec) => () => {
-      if (isString(prop))
-        return createElement(prop);
-      return rec;
+    get: (_, prop) => () => {
+      return createElement(prop);
     }
   })
 );

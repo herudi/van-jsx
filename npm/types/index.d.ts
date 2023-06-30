@@ -20,7 +20,6 @@ type UseHook = {
     [k in keyof HTMLElementTagNameMap]: Hooked<HTMLElementTagNameMap[k], HTMLAttributes>;
 } & {
     element: <T = HTMLElement, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>) => [HookId<T>, FC<F>];
-    bind: <S, K extends keyof S>(state: S, key: K, callback: (val: S[K]) => void) => void;
     mount: (callback: MountedCallback) => void;
 };
 type Options = {
@@ -61,8 +60,9 @@ export declare const IS_BROWSER: boolean;
 export declare const options: Options;
 export declare const isValidElement: (elem: JSX.Element) => boolean;
 export declare const renderSSR: (template: JSX.Element | string, doctype?: boolean) => any;
-export declare const rewind: (elem: JSX.Element) => any;
+export declare const renderToString: (elem: JSX.Element) => string;
 export declare function render(elem: JSX.Element, root: HTMLElement | null): void;
+export declare const rewind: (elem: JSX.Element) => void;
 export declare function h(type: string | TRet, props?: TRet | null | undefined, ...args: TRet): any;
 export declare namespace h {
     var Fragment: FC<unknown>;
