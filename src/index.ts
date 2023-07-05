@@ -20,7 +20,7 @@ type MountedCallback = () => void;
 type HookId<T = HTMLElement> = {
   id: string;
 } & T;
-type Hooked<T = HTMLElement, F = TRet> = () => [HookId<T>, FC<F>];
+type Hooked<T = HTMLElement, F = TRet> = () => FC<F> & HookId<T>;
 type UseHook =
   & {
     [k in keyof HTMLElementTagNameMap]: Hooked<
@@ -31,7 +31,7 @@ type UseHook =
   & {
     element: <T = HTMLElement, F = TRet>(
       type: keyof HTMLElementTagNameMap | FC<F>,
-    ) => [HookId<T>, FC<F>];
+    ) => FC<F> & HookId<T>;
     mount: (callback: MountedCallback) => void;
   };
 type Options = {
@@ -80,7 +80,6 @@ export const isValidElement = (elem: JSX.Element) => {
     ? elem instanceof HTMLElement
     : (isString(elem) && elem[0] === "<");
 };
-const wait = Promise.prototype.then.bind(Promise.resolve());
 const toStyle = (val: Record<string, TRet>) => {
   return Object.keys(val).reduce(
     (a, b) =>
@@ -95,8 +94,8 @@ const toStyle = (val: Record<string, TRet>) => {
     "",
   );
 };
-export function resetId() {
-  idx = 0;
+export function resetId(value?: number) {
+  idx = isValue(value) ? value as number : 0;
 }
 export function initSSR() {
   if (!IS_BROWSER) resetId();
@@ -185,7 +184,9 @@ export const Fragment: FC = (props) => props.children;
 
 h.Fragment = Fragment;
 
-function createHook<T = HTMLElement>(): HookId<T> {
+function createElement<T = HTMLElement, F = TRet>(
+  type: keyof HTMLElementTagNameMap | FC<F>,
+): Hooked<T, F> {
   idx--;
   const id = ":" + idx;
   const elem: TRet = () =>
@@ -210,13 +211,13 @@ function createHook<T = HTMLElement>(): HookId<T> {
       }
     });
   };
-  const hook = {
-    id,
-    get _id() {
-      _idx++;
-      return id;
-    },
-  } as TRet;
+  const hook: TRet = (props: TRet) => {
+    if (isValue(props.id)) props.ref = id;
+    else props.id = id;
+    _idx++;
+    return h(type, props);
+  };
+  hook.id = id;
   if (IS_BROWSER) {
     return Object.setPrototypeOf(
       hook,
@@ -240,26 +241,15 @@ function createHook<T = HTMLElement>(): HookId<T> {
           return true;
         },
       }),
-    ) as HookId<T>;
+    );
   }
   return hook;
-}
-function createElement<T = HTMLElement, F = TRet>(
-  type: keyof HTMLElementTagNameMap | FC<F>,
-): [HookId<T>, FC<F>] {
-  const hook = createHook<T>();
-  return [hook, (props: TRet) => {
-    const id = (<TRet> hook)._id;
-    if (isValue(props.id)) props.ref = id;
-    else props.id = id;
-    return h(type, props);
-  }];
 }
 export const use: UseHook = Object.setPrototypeOf(
   {
     element: createElement,
     mount: (cb: MountedCallback) => {
-      if (IS_BROWSER) wait(cb);
+      if (IS_BROWSER) Promise.resolve().then(cb);
       return cb;
     },
   },

@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.6&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.7&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
 
@@ -10,6 +10,7 @@ A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
 - Fast SSR without rehydration or re-render.
 - TypeScript support out of the box.
 - No virtual-dom.
+- Router with SSR support.
 
 ## Install
 
@@ -35,13 +36,13 @@ import { h, render, use } from "van-jsx";
 
 const Counter = () => {
   const state = { count: 0 };
-  const [btn, Button] = use.button();
-  const [count, Count] = use.span();
+  const Button = use.button();
+  const Count = use.span();
 
   use.mount(() => {
     // ready to use vanilla.
-    btn.onclick = () => {
-      count.innerText = (state.count += 1).toString();
+    Button.onclick = () => {
+      Count.innerText = (state.count += 1).toString();
     };
   });
 
@@ -87,13 +88,33 @@ app.get("/", (req, res) => {
         <App />
         <script src="/client.js"></script>
       </body>
-    </html>,
+    </html>
   );
   res.send(html);
 });
 
 // on the client interactive
 rewind(<App />);
+```
+
+## Router
+
+```jsx
+import { createRouter, Link } from "van-jsx/router";
+
+const App: FC<{ path?: string }> = ({ path }) => {
+  const Route = createRouter({ name: "app", ssr_path: path });
+  return (
+    <>
+      <nav>
+        <Link href="/">Home</Link>
+        <Link href="/about">About</Link>
+      </nav>
+      <Route path="/" component={() => <Home />} />
+      <Route path="/about" component={() => <About />} />
+    </>
+  );
+};
 ```
 
 ## Use
@@ -136,11 +157,11 @@ options.fc = (data) => {
 
 ```jsx
 const Item: FC<{ name: string }> = (props) => {
-  const [item, TodoItem] = use.li();
-  const [remove, Remove] = use.button();
+  const TodoItem = use.li();
+  const Remove = use.button();
 
   use.mount(() => {
-    remove.onclick = () => item.remove();
+    Remove.onclick = () => TodoItem.remove();
   });
 
   return (
@@ -154,16 +175,16 @@ const Todo: FC<{ data: string[] }> = (props) => {
   // inital state from server
   const state = { todos: props.data };
 
-  const [form, Form] = use.form();
-  const [input, TodoInput] = use.input();
-  const [list, TodoList] = use.div();
+  const Form = use.form();
+  const TodoInput = use.input();
+  const TodoList = use.div();
 
   use.mount(() => {
-    form.onsubmit = (e) => {
+    Form.onsubmit = (e) => {
       e.preventDefault();
-      list.append(<Item name={input.value}/>);
-      input.value = "";
-      input.focus();
+      TodoList.append(<Item name={TodoInput.value}/>);
+      TodoInput.value = "";
+      TodoInput.focus();
     };
   });
 

@@ -1,14 +1,16 @@
-import * as esbuild from "https://deno.land/x/esbuild@v0.18.2/mod.js";
-import { emptyDir } from "https://deno.land/std@0.167.0/fs/empty_dir.ts";
+import { buildRouter, copyDtsRouter, initBuildRouter } from "./build_router.ts";
+import {
+  buildRuntime,
+  copyDtsRuntime,
+  initBuildRuntime,
+} from "./build_runtime.ts";
 import { getNames, replaceTs } from "./convert.ts";
-
-const VERSION = "0.0.6";
+import { emptyDir, esbuild, VERSION } from "./deps.ts";
 
 await emptyDir("npm");
 await Deno.mkdir("npm/src", { recursive: true });
-await Deno.mkdir("npm/jsx-runtime/esm", { recursive: true });
-await Deno.mkdir("npm/jsx-runtime/cjs", { recursive: true });
-await Deno.mkdir("npm/jsx-runtime/types", { recursive: true });
+await initBuildRuntime();
+await initBuildRouter();
 const srcFiles = await getNames("src");
 for (let i = 0; i < srcFiles.length; i++) {
   const path = srcFiles[i];
@@ -29,30 +31,8 @@ async function build(config: esbuild.BuildOptions, base: string) {
     entryPoints: ["npm/src/index.ts"],
     outfile: base + "index.js",
   });
-  // await esbuild.build({
-  //   ...config,
-  //   entryPoints: ["npm/src/jsx-runtime.ts"],
-  //   outfile: base + "jsx-runtime.js",
-  // });
-  // await esbuild.build({
-  //   ...config,
-  //   entryPoints: ["npm/src/jsx-dev-runtime.ts"],
-  //   outfile: base + "jsx-dev-runtime.js",
-  // });
 }
-async function buildRuntime(config: esbuild.BuildOptions, base: string) {
-  const res = await esbuild.build({
-    ...config,
-    entryPoints: ["src/jsx-runtime.ts"],
-    write: false,
-  });
-  await Deno.writeTextFile(
-    base + "index.js",
-    res.outputFiles[0].text.replace("./index.ts", "van-jsx"),
-  );
-  Deno.writeTextFileSync(base + "package.json", `{"type":"commonjs"}`);
-  Deno.writeTextFileSync(base + "package.json", `{"type":"module"}`);
-}
+
 try {
   await build({ ...config, format: "esm" }, "npm/esm/");
   await build({ ...config, format: "cjs" }, "npm/cjs/");
@@ -60,38 +40,8 @@ try {
     { ...config, format: "iife", minify: true, globalName: "vanjsx" },
     "npm/browser/",
   );
-  await buildRuntime({ ...config, format: "esm" }, "npm/jsx-runtime/esm/");
-  await buildRuntime({ ...config, format: "cjs" }, "npm/jsx-runtime/cjs/");
-
-  Deno.writeTextFileSync(
-    "npm/jsx-runtime/package.json",
-    JSON.stringify(
-      {
-        "name": "jsx-runtime",
-        "description": "",
-        "author": "Herudi",
-        "private": true,
-        "version": VERSION,
-        "module": "./esm/index.js",
-        "main": "./cjs/index.js",
-        "types": "./types/index.d.ts",
-        "peerDependencies": {
-          "van-jsx": "^" + VERSION,
-        },
-        "license": "MIT",
-        "keywords": [],
-        "exports": {
-          ".": {
-            "types": "./types/index.d.ts",
-            "require": "./cjs/index.js",
-            "import": "./esm/index.js",
-          },
-        },
-      },
-      null,
-      2,
-    ),
-  );
+  await buildRuntime(config);
+  await buildRouter(config);
   console.log("success build");
 } catch (error) {
   console.log(error);
@@ -177,9 +127,5 @@ const p = new Deno.Command("tsc", {
 });
 await p.spawn().status;
 await Deno.remove("npm/src", { recursive: true });
-const file = await Deno.readTextFile("npm/types/jsx-runtime.d.ts");
-await Deno.writeTextFile(
-  "npm/jsx-runtime/types/index.d.ts",
-  file.replace("./index", "van-jsx"),
-);
-await Deno.remove("npm/types/jsx-runtime.d.ts");
+await copyDtsRuntime();
+await copyDtsRouter();

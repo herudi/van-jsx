@@ -15,11 +15,11 @@ type MountedCallback = () => void;
 type HookId<T = HTMLElement> = {
     id: string;
 } & T;
-type Hooked<T = HTMLElement, F = TRet> = () => [HookId<T>, FC<F>];
+type Hooked<T = HTMLElement, F = TRet> = () => FC<F> & HookId<T>;
 type UseHook = {
     [k in keyof HTMLElementTagNameMap]: Hooked<HTMLElementTagNameMap[k], HTMLAttributes>;
 } & {
-    element: <T = HTMLElement, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>) => [HookId<T>, FC<F>];
+    element: <T = HTMLElement, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>) => FC<F> & HookId<T>;
     mount: (callback: MountedCallback) => void;
 };
 type Options = {
@@ -59,7 +59,7 @@ export interface HTMLAttributes {
 export declare const IS_BROWSER: boolean;
 export declare const options: Options;
 export declare const isValidElement: (elem: JSX.Element) => boolean;
-export declare function resetId(): void;
+export declare function resetId(value?: number): void;
 export declare function initSSR(): void;
 export declare function render(elem: JSX.Element, root: HTMLElement | null): void;
 export declare const rewind: (elem: JSX.Element) => void;

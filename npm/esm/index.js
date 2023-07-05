@@ -11,15 +11,14 @@ var options = {};
 var isValidElement = (elem) => {
   return IS_BROWSER ? elem instanceof HTMLElement : isString(elem) && elem[0] === "<";
 };
-var wait = Promise.prototype.then.bind(Promise.resolve());
 var toStyle = (val) => {
   return Object.keys(val).reduce(
     (a, b) => a + b.split(/(?=[A-Z])/).join("-").toLowerCase() + ":" + (typeof val[b] === "number" ? val[b] + "px" : val[b]) + ";",
     ""
   );
 };
-function resetId() {
-  idx = 0;
+function resetId(value) {
+  idx = isValue(value) ? value : 0;
 }
 function initSSR() {
   if (!IS_BROWSER)
@@ -97,7 +96,7 @@ function h(type, props, ...args) {
 }
 var Fragment = (props) => props.children;
 h.Fragment = Fragment;
-function createHook() {
+function createElement(type) {
   idx--;
   const id = ":" + idx;
   const elem = () => doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
@@ -121,13 +120,15 @@ function createHook() {
       }
     });
   };
-  const hook = {
-    id,
-    get _id() {
-      _idx++;
-      return id;
-    }
+  const hook = (props) => {
+    if (isValue(props.id))
+      props.ref = id;
+    else
+      props.id = id;
+    _idx++;
+    return h(type, props);
   };
+  hook.id = id;
   if (IS_BROWSER) {
     return Object.setPrototypeOf(
       hook,
@@ -156,23 +157,12 @@ function createHook() {
   }
   return hook;
 }
-function createElement(type) {
-  const hook = createHook();
-  return [hook, (props) => {
-    const id = hook._id;
-    if (isValue(props.id))
-      props.ref = id;
-    else
-      props.id = id;
-    return h(type, props);
-  }];
-}
 var use = Object.setPrototypeOf(
   {
     element: createElement,
     mount: (cb) => {
       if (IS_BROWSER)
-        wait(cb);
+        Promise.resolve().then(cb);
       return cb;
     }
   },
