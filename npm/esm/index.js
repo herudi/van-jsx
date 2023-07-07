@@ -1,3 +1,24 @@
+var __async = (__this, __arguments, generator) => {
+  return new Promise((resolve, reject) => {
+    var fulfilled = (value) => {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var rejected = (value) => {
+      try {
+        step(generator.throw(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+    step((generator = generator.apply(__this, __arguments)).next());
+  });
+};
+
 // npm/src/index.ts
 var IS_BROWSER = typeof document !== "undefined";
 var dangerHTML = "dangerouslySetInnerHTML";
@@ -172,12 +193,23 @@ var use = Object.setPrototypeOf(
     }
   })
 );
+var lazy = (importFn, fallback) => {
+  return (props) => {
+    const div = use.div();
+    use.mount(() => __async(void 0, null, function* () {
+      const mod = yield importFn();
+      div.replaceWith(mod.default(props));
+    }));
+    return h(div, props, fallback);
+  };
+};
 export {
   Fragment,
   IS_BROWSER,
   h,
   initSSR,
   isValidElement,
+  lazy,
   options,
   render,
   resetId,

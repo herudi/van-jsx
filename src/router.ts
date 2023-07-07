@@ -98,6 +98,12 @@ export const Link: FC<HTMLAttributes> = (props) => {
 export const createRouter = (
   opts: RouterOptions = {},
 ): FC<{ path: string; component: (route: RouteProps) => JSX.Element }> => {
+  if (opts.redirect && IS_BROWSER) {
+    const { pathname, hash } = w.location;
+    if (pathname === "/" && hash === "") {
+      w.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
+    }
+  }
   const id = ":-r-" + (opts.name || "");
   route.lookup[id] = [];
   route.hash = opts.hash;
@@ -121,7 +127,7 @@ export const createRouter = (
           path,
         });
       };
-      return h("div", { id }, [comp()]);
+      return h("div", { id }, comp());
     }
     return null;
   };

@@ -15,6 +15,26 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __async = (__this, __arguments, generator) => {
+  return new Promise((resolve, reject) => {
+    var fulfilled = (value) => {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var rejected = (value) => {
+      try {
+        step(generator.throw(value));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
+    step((generator = generator.apply(__this, __arguments)).next());
+  });
+};
 
 // npm/src/index.ts
 var src_exports = {};
@@ -24,6 +44,7 @@ __export(src_exports, {
   h: () => h,
   initSSR: () => initSSR,
   isValidElement: () => isValidElement,
+  lazy: () => lazy,
   options: () => options,
   render: () => render,
   resetId: () => resetId,
@@ -204,3 +225,13 @@ var use = Object.setPrototypeOf(
     }
   })
 );
+var lazy = (importFn, fallback) => {
+  return (props) => {
+    const div = use.div();
+    use.mount(() => __async(void 0, null, function* () {
+      const mod = yield importFn();
+      div.replaceWith(mod.default(props));
+    }));
+    return h(div, props, fallback);
+  };
+};

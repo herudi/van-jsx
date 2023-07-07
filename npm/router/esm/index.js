@@ -61,6 +61,12 @@ const Link = (props) => {
   return h(A, props);
 };
 const createRouter = (opts = {}) => {
+  if (opts.redirect && IS_BROWSER) {
+    const { pathname, hash } = w.location;
+    if (pathname === "/" && hash === "") {
+      w.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
+    }
+  }
   const id = ":-r-" + (opts.name || "");
   route.lookup[id] = [];
   route.hash = opts.hash;
@@ -85,7 +91,7 @@ const createRouter = (opts = {}) => {
           path
         });
       };
-      return h("div", { id }, [comp()]);
+      return h("div", { id }, comp());
     }
     return null;
   };

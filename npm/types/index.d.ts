@@ -69,4 +69,5 @@ export declare namespace h {
 }
 export declare const Fragment: FC;
 export declare const use: UseHook;
+export declare const lazy: <T = any>(importFn: () => Promise<TRet>, fallback?: JSX.Element) => FC<T>;
 export {};
