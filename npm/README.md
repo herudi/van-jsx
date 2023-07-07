@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.8&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.9&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
 

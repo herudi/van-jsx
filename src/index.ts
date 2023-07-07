@@ -266,9 +266,10 @@ export const lazy = <T = TRet>(
 ): FC<T> => {
   return (props) => {
     const div = use.div();
-    use.mount(async () => {
-      const mod = await importFn();
-      div.replaceWith(mod.default(props));
+    use.mount(() => {
+      importFn().then((mod) => {
+        div.replaceWith(mod.default(props));
+      });
     });
     return h(div, props, fallback);
   };
