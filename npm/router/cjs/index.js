@@ -18,7 +18,8 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var router_exports = {};
 __export(router_exports, {
   Link: () => Link,
-  createRouter: () => createRouter
+  createRouter: () => createRouter,
+  matchRoute: () => matchRoute
 });
 module.exports = __toCommonJS(router_exports);
 var import_index = require("van-jsx");
@@ -37,7 +38,12 @@ const createPattern = (path) => {
 };
 const route = { lookup: {} };
 const w = window;
-let lid = 0;
+const matchRoute = (path, route2) => {
+  for (const key in route2) {
+    if (path === key || createPattern(key).test(path))
+      return route2[key];
+  }
+};
 function goto(pathname) {
   const path = removeHash(pathname);
   const lookup = route.lookup;
@@ -48,7 +54,6 @@ function goto(pathname) {
     if (match && target) {
       const comp = () => {
         var _a;
-        (0, import_index.resetId)(lid);
         return match.component({
           go: (path2) => goto(path2),
           pathname: path,
@@ -67,15 +72,15 @@ function goto(pathname) {
   }
 }
 const Link = (props) => {
-  const A = import_index.use.a();
-  import_index.use.mount(() => {
-    lid--;
-    A.onclick = (e) => {
+  const Host = (0, import_index.createHost)();
+  props.ref = "link";
+  Host.controller = ({ link }) => {
+    link.onclick = (e) => {
       e.preventDefault();
       goto(props.href);
     };
-  });
-  return (0, import_index.h)(A, props);
+  };
+  return (0, import_index.h)(Host, {}, (0, import_index.h)("a", props));
 };
 const createRouter = (opts = {}) => {
   if (opts.redirect && import_index.IS_BROWSER) {

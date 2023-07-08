@@ -3,12 +3,12 @@
   "description": "",
   "author": "Herudi",
   "private": true,
-  "version": "0.0.9",
+  "version": "0.0.10",
   "module": "./esm/index.js",
   "main": "./cjs/index.js",
   "types": "./types/index.d.ts",
   "peerDependencies": {
-    "van-jsx": "^0.0.9"
+    "van-jsx": "^0.0.10"
   },
   "license": "MIT",
   "keywords": [],

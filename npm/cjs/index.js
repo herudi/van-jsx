@@ -21,42 +21,18 @@ var src_exports = {};
 __export(src_exports, {
   Fragment: () => Fragment,
   IS_BROWSER: () => IS_BROWSER,
+  createHost: () => createHost,
   h: () => h,
-  initSSR: () => initSSR,
-  isValidElement: () => isValidElement,
   lazy: () => lazy,
   options: () => options,
-  render: () => render,
-  resetId: () => resetId,
-  rewind: () => rewind,
-  use: () => use
+  render: () => render
 });
 module.exports = __toCommonJS(src_exports);
 var IS_BROWSER = typeof document !== "undefined";
 var dangerHTML = "dangerouslySetInnerHTML";
 var isFunc = (val) => typeof val === "function";
-var isString = (val) => typeof val === "string";
-var isObject = (val) => typeof val === "object";
 var isValue = (val) => val != null;
-var doc = IS_BROWSER ? document : {};
-var idx = 0;
 var options = {};
-var isValidElement = (elem) => {
-  return IS_BROWSER ? elem instanceof HTMLElement : isString(elem) && elem[0] === "<";
-};
-var toStyle = (val) => {
-  return Object.keys(val).reduce(
-    (a, b) => a + b.split(/(?=[A-Z])/).join("-").toLowerCase() + ":" + (typeof val[b] === "number" ? val[b] + "px" : val[b]) + ";",
-    ""
-  );
-};
-function resetId(value) {
-  idx = isValue(value) ? value : 0;
-}
-function initSSR() {
-  if (!IS_BROWSER)
-    resetId();
-}
 function render(elem, root) {
   if (root) {
     if (root.hasChildNodes())
@@ -64,7 +40,14 @@ function render(elem, root) {
     root.append(elem);
   }
 }
-var rewind = (elem) => render(elem, null);
+function removeRef(res) {
+  res.forEach((elem) => {
+    if (elem.removeAttribute)
+      elem.removeAttribute("ref");
+    if (elem.childElementCount)
+      removeRef(elem.childNodes);
+  });
+}
 function h(type, props, ...args) {
   props || (props = {});
   if (isValue(props.children))
@@ -82,23 +65,34 @@ function h(type, props, ...args) {
     if (IS_BROWSER && isValue(res) && res.pop) {
       const fm = new DocumentFragment();
       fm.append(...res);
+      if (props.__fn) {
+        props.__fn(
+          new Proxy({}, {
+            get: (_, prop) => fm.querySelector(`[ref="${prop}"]`)
+          })
+        );
+      }
+      removeRef(res);
       return fm;
     }
     return res;
   }
-  let elem = IS_BROWSER ? doc.createElement(type) : `<${type}`;
+  let elem = IS_BROWSER ? document.createElement(type) : `<${type}`;
   for (const k in props) {
     let val = props[k];
     if (isValue(val) && k !== dangerHTML && k !== "children" && !isFunc(val)) {
-      val = isObject(val) ? toStyle(val) : val === true ? "" : val === false ? null : val;
+      val = val === true ? "" : val === false ? null : val;
       if (isValue(val)) {
         let key = k.toLowerCase();
         if (key === "classname")
           key = "class";
         if (IS_BROWSER)
           elem.setAttribute(key, val);
-        else
-          elem += ` ${key}${val === "" ? "" : `="${val}"`}`;
+        else {
+          if (key !== "ref") {
+            elem += ` ${key}${val === "" ? "" : `="${val}"`}`;
+          }
+        }
       }
     }
   }
@@ -118,7 +112,7 @@ function h(type, props, ...args) {
       if (isValue(child)) {
         if (IS_BROWSER)
           elem.append(child);
-        else if (isString(child))
+        else if (typeof child === "string")
           elem += child;
         else if (child.pop)
           elem += child.join("");
@@ -129,90 +123,24 @@ function h(type, props, ...args) {
 }
 var Fragment = (props) => props.children;
 h.Fragment = Fragment;
-function createElement(type) {
-  idx--;
-  const id = ":" + idx;
-  const elem = () => doc.getElementById(id) || doc.querySelector(`[ref="${id}"]`);
-  let _idx = 0;
-  const each = (callback) => {
-    if (_idx < 2) {
-      callback(elem(), 0);
-    } else {
-      doc.querySelectorAll(`[id="${id}"], [ref="${id}"]`).forEach(
-        (node, i) => {
-          callback(node, i);
-        }
-      );
-    }
-  };
-  const toEach = (cb) => {
-    each((node, i) => {
-      if (node) {
-        cb(node);
-        node.index = i;
-      }
-    });
-  };
-  const hook = (props) => {
-    if (isValue(props.id))
-      props.ref = id;
-    else
-      props.id = id;
-    _idx++;
-    return h(type, props);
-  };
-  hook.id = id;
-  if (IS_BROWSER) {
-    return Object.setPrototypeOf(
-      hook,
-      new Proxy({}, {
-        get: (_, prop, rec) => {
-          if (isString(prop)) {
-            const el = elem() || {};
-            if (isFunc(el[prop])) {
-              return (...args) => toEach((node) => node[prop](...args));
-            }
-            if (isValue(el[prop]))
-              return el[prop];
-          }
-          return rec;
-        },
-        set: (_, prop, val) => {
-          if (isString(prop)) {
-            toEach((node) => {
-              node[prop] = val;
-            });
-          }
-          return true;
-        }
-      })
+function createHost(type) {
+  const host = (props) => {
+    return h(
+      Fragment,
+      { __fn: host.controller },
+      type ? h(type, props) : props.children
     );
-  }
-  return hook;
+  };
+  return host;
 }
-var use = Object.setPrototypeOf(
-  {
-    element: createElement,
-    mount: (cb) => {
-      if (IS_BROWSER)
-        Promise.resolve().then(cb);
-      return cb;
-    }
-  },
-  new Proxy({}, {
-    get: (_, prop) => () => {
-      return createElement(prop);
-    }
-  })
-);
 var lazy = (importFn, fallback) => {
   return (props) => {
-    const div = use.div();
-    use.mount(() => {
+    const Host = createHost();
+    Host.controller = ({ lazy: lazy2 }) => {
       importFn().then((mod) => {
-        div.replaceWith(mod.default(props));
+        lazy2.replaceWith(mod.default(props));
       });
-    });
-    return h(div, props, fallback);
+    };
+    return h(Host, {}, h("div", { ref: "lazy" }, fallback));
   };
 };

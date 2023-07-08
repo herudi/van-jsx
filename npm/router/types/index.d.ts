@@ -20,6 +20,9 @@ export type RouterOptions = {
     redirect?: string;
     name?: string;
 };
+export declare const matchRoute: (path: string, route: {
+    [k: string]: any;
+}) => any;
 export declare const Link: FC<HTMLAttributes>;
 export declare const createRouter: (opts?: RouterOptions) => FC<{
     path: string;

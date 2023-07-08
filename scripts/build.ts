@@ -58,8 +58,7 @@ Deno.writeTextFileSync(
   JSON.stringify(
     {
       "name": "van-jsx",
-      "description":
-        "A small 1kb JSX libs for building SSR/UI with vanilla and hooks.",
+      "description": "A small ~1kb JSX libs for building Vanilla App.",
       "author": "Herudi",
       "version": VERSION,
       "module": "./esm/index.js",

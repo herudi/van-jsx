@@ -10,18 +10,15 @@ declare global {
 type JsxProps = {
     children?: TRet;
 };
-export type FC<T extends unknown = unknown> = (props: JsxProps & T) => JSX.Element;
-type MountedCallback = () => void;
-type HookId<T = HTMLElement> = {
-    id: string;
-} & T;
-type Hooked<T = HTMLElement, F = TRet> = () => FC<F> & HookId<T>;
-type UseHook = {
-    [k in keyof HTMLElementTagNameMap]: Hooked<HTMLElementTagNameMap[k], HTMLAttributes>;
-} & {
-    element: <T = HTMLElement, F = TRet>(type: keyof HTMLElementTagNameMap | FC<F>) => FC<F> & HookId<T>;
-    mount: (callback: MountedCallback) => void;
+type Merge<A, B> = {
+    [K in keyof (A & B)]: (K extends keyof B ? B[K] : (K extends keyof A ? A[K] : never));
 };
+type HTMLBasicElement = HTMLElement & HTMLInputElement;
+export type RefElement = {
+    [k: string]: HTMLBasicElement;
+};
+export type CTR<Ref extends unknown = unknown> = (ref: Ref) => void;
+export type FC<T extends unknown = unknown> = (props: JsxProps & T) => JSX.Element;
 type Options = {
     elem?: (elem: JSX.Element) => void;
     fc?: (elem: JSX.Element) => void;
@@ -43,9 +40,7 @@ export interface HTMLAttributes {
     placeholder?: string;
     slot?: string;
     spellCheck?: boolean;
-    style?: {
-        [k: string]: TRet;
-    } | string;
+    style?: string;
     tabIndex?: number;
     title?: string;
     translate?: "yes" | "no";
@@ -58,16 +53,14 @@ export interface HTMLAttributes {
 }
 export declare const IS_BROWSER: boolean;
 export declare const options: Options;
-export declare const isValidElement: (elem: JSX.Element) => boolean;
-export declare function resetId(value?: number): void;
-export declare function initSSR(): void;
 export declare function render(elem: JSX.Element, root: HTMLElement | null): void;
-export declare const rewind: (elem: JSX.Element) => void;
 export declare function h(type: string | TRet, props?: TRet | null | undefined, ...args: TRet): any;
 export declare namespace h {
     var Fragment: FC<unknown>;
 }
 export declare const Fragment: FC;
-export declare const use: UseHook;
+export declare function createHost<R>(type?: keyof HTMLElementTagNameMap): FC<TRet> & {
+    controller: CTR<Merge<RefElement, R>>;
+};
 export declare const lazy: <T = any>(importFn: () => Promise<TRet>, fallback?: JSX.Element) => FC<T>;
 export {};

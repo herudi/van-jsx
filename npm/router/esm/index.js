@@ -1,9 +1,8 @@
 import {
+  createHost,
   h,
   IS_BROWSER,
-  render,
-  resetId,
-  use
+  render
 } from "van-jsx";
 const removeHash = (path) => path[0] === "#" ? path.substring(1) : path;
 const getPathname = (pathname, hash) => {
@@ -20,7 +19,12 @@ const createPattern = (path) => {
 };
 const route = { lookup: {} };
 const w = window;
-let lid = 0;
+const matchRoute = (path, route2) => {
+  for (const key in route2) {
+    if (path === key || createPattern(key).test(path))
+      return route2[key];
+  }
+};
 function goto(pathname) {
   const path = removeHash(pathname);
   const lookup = route.lookup;
@@ -31,7 +35,6 @@ function goto(pathname) {
     if (match && target) {
       const comp = () => {
         var _a;
-        resetId(lid);
         return match.component({
           go: (path2) => goto(path2),
           pathname: path,
@@ -50,15 +53,15 @@ function goto(pathname) {
   }
 }
 const Link = (props) => {
-  const A = use.a();
-  use.mount(() => {
-    lid--;
-    A.onclick = (e) => {
+  const Host = createHost();
+  props.ref = "link";
+  Host.controller = ({ link }) => {
+    link.onclick = (e) => {
       e.preventDefault();
       goto(props.href);
     };
-  });
-  return h(A, props);
+  };
+  return h(Host, {}, h("a", props));
 };
 const createRouter = (opts = {}) => {
   if (opts.redirect && IS_BROWSER) {
@@ -98,5 +101,6 @@ const createRouter = (opts = {}) => {
 };
 export {
   Link,
-  createRouter
+  createRouter,
+  matchRoute
 };

@@ -1,11 +1,10 @@
 import {
+  createHost,
   FC,
   h,
   HTMLAttributes,
   IS_BROWSER,
   render,
-  resetId,
-  use,
 } from "./index.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -55,7 +54,11 @@ const route = { lookup: {} } as {
   ssr_path?: string;
 };
 const w = window;
-let lid = 0;
+export const matchRoute = (path: string, route: { [k: string]: TRet }) => {
+  for (const key in route) {
+    if (path === key || createPattern(key).test(path)) return route[key];
+  }
+};
 function goto(pathname: string) {
   const path = removeHash(pathname);
   const lookup = route.lookup;
@@ -65,7 +68,6 @@ function goto(pathname: string) {
     const match = routes.find((el) => el.pattern.test(path));
     if (match && target) {
       const comp = () => {
-        resetId(lid);
         return match.component({
           go: (path) => goto(path),
           pathname: path,
@@ -84,15 +86,15 @@ function goto(pathname: string) {
   }
 }
 export const Link: FC<HTMLAttributes> = (props) => {
-  const A = use.a();
-  use.mount(() => {
-    lid--;
-    A.onclick = (e) => {
+  const Host = createHost();
+  props.ref = "link";
+  Host.controller = ({ link }) => {
+    link.onclick = (e) => {
       e.preventDefault();
       goto(props.href);
     };
-  });
-  return h(A, props);
+  };
+  return h(Host, {}, h("a", props));
 };
 
 export const createRouter = (

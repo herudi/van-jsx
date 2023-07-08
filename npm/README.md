@@ -2,12 +2,11 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.9&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.10&badge=)](https://www.npmjs.com/package/van-jsx)
 
-A small 1kb JSX libs for building SSR/UI with vanilla and hooks.
+A small ~1kb JSX libs for building Vanilla App.
 
-- Control JSX with vanilla-js and hooks.
-- Fast SSR without rehydration or re-render.
+- Control JSX with vanilla-js.
 - TypeScript support out of the box.
 - No virtual-dom.
 - Router with SSR support.
@@ -30,26 +29,24 @@ import {...} from "https://deno.land/x/van_jsx/mod.ts";
 
 ```jsx
 /* @jsx h */
-/* @jsxFrag h.Fragment */
 
-import { h, render, use } from "van-jsx";
+import { createHost, h, render } from "van-jsx";
 
 const Counter = () => {
   const state = { count: 0 };
-  const Button = use.button();
-  const Count = use.span();
+  const Host = createHost();
 
-  use.mount(() => {
-    // ready to use vanilla.
-    Button.onclick = () => {
-      Count.innerText = (state.count += 1).toString();
+  Host.controller = ({ btn, count }) => {
+    btn.onclick = () => {
+      count.innerText = (state.count += 1).toString();
     };
-  });
+  };
 
   return (
-    <Button>
-      Click Me <Count>{state.count}</Count>
-    </Button>
+    <Host>
+      <button ref="btn">Click Me</button>
+      <h1 ref="count">{state.count}</h1>
+    </Host>
   );
 };
 
@@ -70,31 +67,13 @@ render(<Counter />, document.getElementById("root"));
 
 ```jsx
 /* @jsx h */
-/* @jsxFrag h.Fragment */
 
-import { h, initSSR, rewind } from "van-jsx";
-import App from "./app.tsx";
+import { h } from "van-jsx";
+import Counter from "./counter.tsx";
 
-// example using express
 app.get("/", (req, res) => {
-  initSSR();
-  const html = (
-    <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <title>My App</title>
-      </head>
-      <body>
-        <App />
-        <script src="/client.js"></script>
-      </body>
-    </html>
-  );
-  res.send(html);
+  res.send(<Counter />);
 });
-
-// on the client interactive
-rewind(<App />);
 ```
 
 ## Router
@@ -102,8 +81,8 @@ rewind(<App />);
 ```jsx
 import { createRouter, Link } from "van-jsx/router";
 
-const App: FC<{ path?: string }> = ({ path }) => {
-  const Route = createRouter({ name: "app", ssr_path: path });
+const App = () => {
+  const Route = createRouter();
   return (
     <>
       <nav>
@@ -117,19 +96,30 @@ const App: FC<{ path?: string }> = ({ path }) => {
 };
 ```
 
-## Use
+## Host
 
-### use.[HTMLElement]
+Just Fragment to control jsx with vanilla-js.
 
-Hook HTMLElement to markup.
+```jsx
+const MyComp = () => {
+  const Host = createHost();
 
-### use.element
+  Host.controller = ({ my_text }) => {
+    // my_text is a ref="my_text"
 
-Hook HTMLElement / FunctionComponent to markup.
+    my_text.innerText = "Bar";
+  };
 
-### use.mount
+  return (
+    <Host>
+      <h1 ref="my_text">Foo</h1>
+    </Host>
+  );
+};
 
-Access Dom after render.
+// Dom updated.
+// <h1>Bar</h1>
+```
 
 ## Options Hook
 
@@ -163,46 +153,44 @@ const Home = lazy(() => import("./home.tsx"));
 
 ```jsx
 const Item: FC<{ name: string }> = (props) => {
-  const TodoItem = use.li();
-  const Remove = use.button();
+  // create Host as li
+  const Host = createHost("li");
 
-  use.mount(() => {
-    Remove.onclick = () => TodoItem.remove();
-  });
+  Host.controller = ({ item, remove }) => {
+    remove.onclick = () => item.remove();
+  };
 
   return (
-    <TodoItem>
+    <Host ref="item">
       <span>{props.name}</span>
-      <Remove>remove</Remove>
-    </TodoItem>
-  )
-}
+      <button ref="remove">remove</button>
+    </Host>
+  );
+};
 const Todo: FC<{ data: string[] }> = (props) => {
   // inital state from server
   const state = { todos: props.data };
 
-  const Form = use.form();
-  const TodoInput = use.input();
-  const TodoList = use.div();
+  const Host = createHost();
 
-  use.mount(() => {
-    Form.onsubmit = (e) => {
+  Host.controller = ({ form, input, list }) => {
+    form.onsubmit = (e) => {
       e.preventDefault();
-      TodoList.append(<Item name={TodoInput.value}/>);
-      TodoInput.value = "";
-      TodoInput.focus();
+      list.append(<Item name={input.value} />);
+      input.value = "";
+      input.focus();
     };
-  });
+  };
 
   return (
-    <>
+    <Host>
       <h1>Welcome Todo</h1>
-      <Form>
-        <TodoInput placeholder="text..." />
+      <form ref="form">
+        <input ref="input" placeholder="text..." />
         <button type="submit">Submit</button>
-      </Form>
-      <TodoList>{state.todos.map((name) => <Item name={name}/>)}</TodoList>
-    </>
+      </form>
+      <div ref="list">{state.todos.map((name) => <Item name={name} />)}</div>
+    </Host>
   );
 };
 ```
