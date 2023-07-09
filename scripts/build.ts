@@ -100,6 +100,11 @@ Deno.writeTextFileSync(
           "require": "./jsx-runtime/cjs/index.js",
           "import": "./jsx-runtime/esm/index.js",
         },
+        "./router": {
+          "types": "./router/types/index.d.ts",
+          "require": "./router/cjs/index.js",
+          "import": "./router/esm/index.js",
+        },
       },
       "typesVersions": {
         "*": {
@@ -111,6 +116,9 @@ Deno.writeTextFileSync(
           ],
           "jsx-dev-runtime": [
             "./jsx-runtime/types/index.d.ts",
+          ],
+          "router": [
+            "./router/types/index.d.ts",
           ],
         },
       },

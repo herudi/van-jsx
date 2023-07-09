@@ -13,6 +13,8 @@ declare global {
 type JsxProps = {
   children?: TRet;
 };
+// deno-lint-ignore ban-types
+type EObject = {};
 type Merge<A, B> = {
   [K in keyof (A & B)]: (
     K extends keyof B ? B[K]
@@ -46,7 +48,7 @@ export interface HTMLAttributes {
   placeholder?: string;
   slot?: string;
   spellCheck?: boolean;
-  style?: string;
+  style?: string | { [k: string]: TRet };
   tabIndex?: number;
   title?: string;
   translate?: "yes" | "no";
@@ -60,16 +62,60 @@ export interface HTMLAttributes {
 export const IS_BROWSER = typeof document !== "undefined";
 const dangerHTML = "dangerouslySetInnerHTML";
 const isFunc = <T>(val: T) => typeof val === "function";
+const isString = <T>(val: T) => typeof val === "string";
+const isObject = <T>(val: T) => typeof val === "object";
+const isNumber = <T>(val: T) => typeof val === "number";
 const isValue = <T>(val: T) => val != null;
 export const options = {} as Options;
+export const isValidElement = (elem: JSX.Element) => {
+  return IS_BROWSER ? isFunc(elem.append) : (isString(elem) && elem[0] === "<");
+};
+const toStyle = (val: { [k: string]: TRet }) => {
+  return Object.keys(val).reduce(
+    (a, b) =>
+      a +
+      b
+        .split(/(?=[A-Z])/)
+        .join("-")
+        .toLowerCase() +
+      ":" +
+      (isNumber(val[b]) ? val[b] + "px" : val[b]) +
+      ";",
+    "",
+  );
+};
+const mutateAttr = (root: HTMLElement, elem: HTMLElement) => {
+  const childs = root.childNodes as TRet;
+  const dests = elem.childNodes as TRet;
+  childs.forEach((src: HTMLElement, i: number) => {
+    const dest = dests[i] as HTMLElement;
+    if (dest) {
+      const srcAttr = src.attributes || [];
+      for (let i = 0; i < srcAttr.length; i++) {
+        const attr = srcAttr[i];
+        if (attr.name && dest.setAttribute) {
+          dest.setAttribute(attr.name, attr.value);
+        }
+      }
+      if (src.childElementCount) {
+        mutateAttr(src, dest);
+      }
+    }
+  });
+};
 export function render(
   elem: JSX.Element,
   root: HTMLElement | null,
+  isHydrate?: boolean,
 ) {
   if (root) {
-    if (root.hasChildNodes()) root.innerHTML = "";
+    if (isHydrate) mutateAttr(root, elem);
+    root.innerHTML = "";
     root.append(elem);
   }
+}
+export function hydrate(elem: JSX.Element, root: HTMLElement | null) {
+  render(elem, root, true);
 }
 function removeRef(res: TRet) {
   res.forEach((elem: Element) => {
@@ -86,7 +132,7 @@ export function h(
   if (isValue(props.children)) args = args.concat(props.children);
   const children = args.flat().map((
     el: TRet,
-  ) => (typeof el === "number" ? String(el) : el)).filter(Boolean);
+  ) => (isNumber(el) ? String(el) : el)).filter(Boolean);
   if (options.elem) options.elem({ props, type });
   if (isFunc(type)) {
     if (children.length) {
@@ -118,7 +164,13 @@ export function h(
       k !== "children" &&
       !isFunc(val)
     ) {
-      val = val === true ? "" : val === false ? null : val;
+      val = isObject(val)
+        ? toStyle(val)
+        : val === true
+        ? ""
+        : val === false
+        ? null
+        : val;
       if (isValue(val)) {
         let key = k.toLowerCase();
         if (key === "classname") key = "class";
@@ -146,7 +198,7 @@ export function h(
     children.forEach((child: TRet) => {
       if (isValue(child)) {
         if (IS_BROWSER) elem.append(child);
-        else if (typeof child === "string") elem += child;
+        else if (isString(child)) elem += child;
         else if (child.pop) elem += child.join("");
       }
     });
@@ -157,7 +209,7 @@ export const Fragment: FC = (props) => props.children;
 
 h.Fragment = Fragment;
 
-export function createHost<R>(
+export function createHost<R = EObject>(
   type?: keyof HTMLElementTagNameMap,
 ): FC<TRet> & { controller: CTR<Merge<RefElement, R>> } {
   const host: TRet = (props: TRet) => {

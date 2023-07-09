@@ -10,6 +10,7 @@ declare global {
 type JsxProps = {
     children?: TRet;
 };
+type EObject = {};
 type Merge<A, B> = {
     [K in keyof (A & B)]: (K extends keyof B ? B[K] : (K extends keyof A ? A[K] : never));
 };
@@ -40,7 +41,9 @@ export interface HTMLAttributes {
     placeholder?: string;
     slot?: string;
     spellCheck?: boolean;
-    style?: string;
+    style?: string | {
+        [k: string]: TRet;
+    };
     tabIndex?: number;
     title?: string;
     translate?: "yes" | "no";
@@ -53,13 +56,15 @@ export interface HTMLAttributes {
 }
 export declare const IS_BROWSER: boolean;
 export declare const options: Options;
-export declare function render(elem: JSX.Element, root: HTMLElement | null): void;
+export declare const isValidElement: (elem: JSX.Element) => boolean;
+export declare function render(elem: JSX.Element, root: HTMLElement | null, isHydrate?: boolean): void;
+export declare function hydrate(elem: JSX.Element, root: HTMLElement | null): void;
 export declare function h(type: string | TRet, props?: TRet | null | undefined, ...args: TRet): any;
 export declare namespace h {
     var Fragment: FC<unknown>;
 }
 export declare const Fragment: FC;
-export declare function createHost<R>(type?: keyof HTMLElementTagNameMap): FC<TRet> & {
+export declare function createHost<R = EObject>(type?: keyof HTMLElementTagNameMap): FC<TRet> & {
     controller: CTR<Merge<RefElement, R>>;
 };
 export declare const lazy: <T = any>(importFn: () => Promise<TRet>, fallback?: JSX.Element) => FC<T>;

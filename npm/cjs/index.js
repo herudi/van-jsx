@@ -23,6 +23,8 @@ __export(src_exports, {
   IS_BROWSER: () => IS_BROWSER,
   createHost: () => createHost,
   h: () => h,
+  hydrate: () => hydrate,
+  isValidElement: () => isValidElement,
   lazy: () => lazy,
   options: () => options,
   render: () => render
@@ -31,14 +33,49 @@ module.exports = __toCommonJS(src_exports);
 var IS_BROWSER = typeof document !== "undefined";
 var dangerHTML = "dangerouslySetInnerHTML";
 var isFunc = (val) => typeof val === "function";
+var isString = (val) => typeof val === "string";
+var isObject = (val) => typeof val === "object";
+var isNumber = (val) => typeof val === "number";
 var isValue = (val) => val != null;
 var options = {};
-function render(elem, root) {
+var isValidElement = (elem) => {
+  return IS_BROWSER ? isFunc(elem.append) : isString(elem) && elem[0] === "<";
+};
+var toStyle = (val) => {
+  return Object.keys(val).reduce(
+    (a, b) => a + b.split(/(?=[A-Z])/).join("-").toLowerCase() + ":" + (isNumber(val[b]) ? val[b] + "px" : val[b]) + ";",
+    ""
+  );
+};
+var mutateAttr = (root, elem) => {
+  const childs = root.childNodes;
+  const dests = elem.childNodes;
+  childs.forEach((src, i) => {
+    const dest = dests[i];
+    if (dest) {
+      const srcAttr = src.attributes || [];
+      for (let i2 = 0; i2 < srcAttr.length; i2++) {
+        const attr = srcAttr[i2];
+        if (attr.name && dest.setAttribute) {
+          dest.setAttribute(attr.name, attr.value);
+        }
+      }
+      if (src.childElementCount) {
+        mutateAttr(src, dest);
+      }
+    }
+  });
+};
+function render(elem, root, isHydrate) {
   if (root) {
-    if (root.hasChildNodes())
-      root.innerHTML = "";
+    if (isHydrate)
+      mutateAttr(root, elem);
+    root.innerHTML = "";
     root.append(elem);
   }
+}
+function hydrate(elem, root) {
+  render(elem, root, true);
 }
 function removeRef(res) {
   res.forEach((elem) => {
@@ -52,7 +89,7 @@ function h(type, props, ...args) {
   props || (props = {});
   if (isValue(props.children))
     args = args.concat(props.children);
-  const children = args.flat().map((el) => typeof el === "number" ? String(el) : el).filter(Boolean);
+  const children = args.flat().map((el) => isNumber(el) ? String(el) : el).filter(Boolean);
   if (options.elem)
     options.elem({ props, type });
   if (isFunc(type)) {
@@ -81,7 +118,7 @@ function h(type, props, ...args) {
   for (const k in props) {
     let val = props[k];
     if (isValue(val) && k !== dangerHTML && k !== "children" && !isFunc(val)) {
-      val = val === true ? "" : val === false ? null : val;
+      val = isObject(val) ? toStyle(val) : val === true ? "" : val === false ? null : val;
       if (isValue(val)) {
         let key = k.toLowerCase();
         if (key === "classname")
@@ -112,7 +149,7 @@ function h(type, props, ...args) {
       if (isValue(child)) {
         if (IS_BROWSER)
           elem.append(child);
-        else if (typeof child === "string")
+        else if (isString(child))
           elem += child;
         else if (child.pop)
           elem += child.join("");

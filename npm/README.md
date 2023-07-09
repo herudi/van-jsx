@@ -2,10 +2,11 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.10&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.11&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small ~1kb JSX libs for building Vanilla App.
 
+- SSR Ready.
 - Control JSX with vanilla-js.
 - TypeScript support out of the box.
 - No virtual-dom.
@@ -69,11 +70,29 @@ render(<Counter />, document.getElementById("root"));
 /* @jsx h */
 
 import { h } from "van-jsx";
-import Counter from "./counter.tsx";
+import App from "./app.tsx";
 
+// example using express
 app.get("/", (req, res) => {
-  res.send(<Counter />);
+  const html = (
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>My App</title>
+      </head>
+      <body>
+        <div id="root">
+          <App />
+        </div>
+        <script src="/client.js"></script>
+      </body>
+    </html>
+  );
+  res.send(html);
 });
+
+// on the client interactive
+hydrate(<App />, document.getElementById("root"));
 ```
 
 ## Router
