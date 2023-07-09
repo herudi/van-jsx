@@ -12,6 +12,23 @@ A small ~1kb JSX libs for building Vanilla App.
 - No virtual-dom.
 - Router with SSR support.
 
+## Starter
+
+```bash
+npx degit herudi/van-jsx-starter my-app
+
+cd my-app
+
+// install deps
+npm install
+
+// run dev
+npm run dev
+
+// build
+npm run build
+```
+
 ## Install
 
 ### Npm
