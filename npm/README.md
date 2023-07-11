@@ -2,15 +2,39 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.11&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.12&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small ~1kb JSX libs for building Vanilla App.
 
-- SSR Ready.
 - Control JSX with vanilla-js.
+- SSR Ready.
 - TypeScript support out of the box.
 - No virtual-dom.
 - Router with SSR support.
+- Helmet with SSR support.
+
+## Starter
+
+### Client App
+
+```bash
+npx degit herudi/van-jsx-starter my-app
+
+cd my-app
+
+// install deps
+npm install
+
+// run dev
+npm run dev
+
+// build
+npm run build
+```
+
+### SSR App
+
+<i>Coming Soon...</i>
 
 ## Install
 
@@ -113,6 +137,56 @@ const App = () => {
     </>
   );
 };
+```
+
+## Helmet
+
+```jsx
+import { Helmet } from "van-jsx/helmet";
+
+const App = () => {
+  return (
+    <Host>
+      <Helmet>
+        <title>Hello App</title>
+        <script>{`console.log("hello from head")`}</script>
+      </Helmet>
+      <Helmet footer>
+        <script>{`console.log("hello from body")`}</script>
+      </Helmet>
+      <div>
+        <h1>Hello App</h1>
+      </div>
+    </Host>
+  );
+};
+```
+
+## Helmet SSR
+
+```jsx
+import { Helmet } from "van-jsx/helmet";
+
+// example using express
+app.get("/", (req, res) => {
+  const { head, attr, body, footer } = Helmet.rewind(<App />);
+  const html = (
+    <html lang="en" {...attr.html.toJSON()}>
+      <head>
+        <meta charset="utf-8" />
+        {head}
+      </head>
+      <body {...attr.body.toJSON()}>
+        <div id="root">
+          {body}
+        </div>
+        <script src="/client.js"></script>
+        {footer}
+      </body>
+    </html>
+  );
+  res.send(html);
+});
 ```
 
 ## Host

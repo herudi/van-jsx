@@ -2,7 +2,7 @@
   "name": "van-jsx",
   "description": "A small ~1kb JSX libs for building Vanilla App.",
   "author": "Herudi",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "module": "./esm/index.js",
   "main": "./cjs/index.js",
   "unpkg": "./browser/index.js",
@@ -46,6 +46,11 @@
       "types": "./router/types/index.d.ts",
       "require": "./router/cjs/index.js",
       "import": "./router/esm/index.js"
+    },
+    "./helmet": {
+      "types": "./helmet/types/index.d.ts",
+      "require": "./helmet/cjs/index.js",
+      "import": "./helmet/esm/index.js"
     }
   },
   "typesVersions": {
@@ -61,6 +66,9 @@
       ],
       "router": [
         "./router/types/index.d.ts"
+      ],
+      "helmet": [
+        "./helmet/types/index.d.ts"
       ]
     }
   }

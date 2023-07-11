@@ -23,6 +23,7 @@ __export(router_exports, {
 });
 module.exports = __toCommonJS(router_exports);
 var import_index = require("van-jsx");
+let current = "";
 const removeHash = (path) => path[0] === "#" ? path.substring(1) : path;
 const getPathname = (pathname, hash) => {
   if (hash) {
@@ -46,6 +47,10 @@ const matchRoute = (path, route2) => {
 };
 function goto(pathname) {
   const path = removeHash(pathname);
+  const realPathname = route.hash ? pathname[0] === "#" ? pathname : "#" + pathname : pathname;
+  if (current === realPathname) {
+    return;
+  }
   const lookup = route.lookup;
   for (const id in lookup) {
     const target = document.getElementById(id);
@@ -62,10 +67,11 @@ function goto(pathname) {
         });
       };
       (0, import_index.render)(comp(), target);
+      current = realPathname;
       window.history.pushState(
         {},
         "",
-        route.hash ? pathname[0] === "#" ? pathname : "#" + pathname : pathname
+        current
       );
       break;
     }
@@ -104,12 +110,13 @@ const createRouter = (opts = {}) => {
     const pattern = createPattern(path);
     route.lookup[id].push({ path, pattern, component });
     if (pattern.test(res_path)) {
+      current = res_path;
       const comp = () => {
         var _a;
         return component({
-          go: (path2) => goto(path2),
-          pathname: res_path,
-          params: ((_a = pattern.exec(res_path)) == null ? void 0 : _a.groups) || {},
+          go: goto,
+          pathname: current,
+          params: ((_a = pattern.exec(current)) == null ? void 0 : _a.groups) || {},
           path
         });
       };

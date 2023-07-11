@@ -27,6 +27,7 @@ export type RouterOptions = {
   redirect?: string;
   name?: string;
 };
+let current = "";
 const removeHash = (path: string) => path[0] === "#" ? path.substring(1) : path;
 const getPathname = (pathname: string, hash: string) => {
   if (hash) {
@@ -61,6 +62,12 @@ export const matchRoute = (path: string, route: { [k: string]: TRet }) => {
 };
 function goto(pathname: string) {
   const path = removeHash(pathname);
+  const realPathname = route.hash
+    ? pathname[0] === "#" ? pathname : "#" + pathname
+    : pathname;
+  if (current === realPathname) {
+    return;
+  }
   const lookup = route.lookup;
   for (const id in lookup) {
     const target = document.getElementById(id) as HTMLElement;
@@ -76,10 +83,11 @@ function goto(pathname: string) {
         });
       };
       render(comp(), target);
+      current = realPathname;
       window.history.pushState(
         {},
         "",
-        route.hash ? pathname[0] === "#" ? pathname : "#" + pathname : pathname,
+        current,
       );
       break;
     }
@@ -121,11 +129,12 @@ export const createRouter = (
     const pattern = createPattern(path);
     route.lookup[id].push({ path, pattern, component });
     if (pattern.test(res_path)) {
+      current = res_path;
       const comp = () => {
         return component({
-          go: (path) => goto(path),
-          pathname: res_path,
-          params: pattern.exec(res_path)?.groups || {},
+          go: goto,
+          pathname: current,
+          params: pattern.exec(current)?.groups || {},
           path,
         });
       };

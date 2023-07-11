@@ -1,3 +1,4 @@
+import { buildHelmet, copyDtsHelmet, initBuildHelmet } from "./build_helmet.ts";
 import { buildRouter, copyDtsRouter, initBuildRouter } from "./build_router.ts";
 import {
   buildRuntime,
@@ -11,6 +12,7 @@ await emptyDir("npm");
 await Deno.mkdir("npm/src", { recursive: true });
 await initBuildRuntime();
 await initBuildRouter();
+await initBuildHelmet();
 const srcFiles = await getNames("src");
 for (let i = 0; i < srcFiles.length; i++) {
   const path = srcFiles[i];
@@ -42,6 +44,7 @@ try {
   );
   await buildRuntime(config);
   await buildRouter(config);
+  await buildHelmet(config);
   console.log("success build");
 } catch (error) {
   console.log(error);
@@ -105,6 +108,11 @@ Deno.writeTextFileSync(
           "require": "./router/cjs/index.js",
           "import": "./router/esm/index.js",
         },
+        "./helmet": {
+          "types": "./helmet/types/index.d.ts",
+          "require": "./helmet/cjs/index.js",
+          "import": "./helmet/esm/index.js",
+        },
       },
       "typesVersions": {
         "*": {
@@ -119,6 +127,9 @@ Deno.writeTextFileSync(
           ],
           "router": [
             "./router/types/index.d.ts",
+          ],
+          "helmet": [
+            "./helmet/types/index.d.ts",
           ],
         },
       },
@@ -136,3 +147,4 @@ await p.spawn().status;
 await Deno.remove("npm/src", { recursive: true });
 await copyDtsRuntime();
 await copyDtsRouter();
+await copyDtsHelmet();
