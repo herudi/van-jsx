@@ -19,7 +19,6 @@ const createPattern = (path) => {
   return new RegExp(`^${path.replace(/\/$/, "").replace(/:(\w+)(\?)?(\.)?/g, "$2(?<$1>[^/]+)$2$3").replace(/(\/?)\*/g, (_, p) => `(${p}.*)?`).replace(/\.(?=[\w(])/, "\\.")}/*$`);
 };
 const route = { lookup: {} };
-const w = window;
 const matchRoute = (path, route2) => {
   for (const key in route2) {
     if (path === key || createPattern(key).test(path))
@@ -71,9 +70,9 @@ const Link = (props) => {
 };
 const createRouter = (opts = {}) => {
   if (opts.redirect && IS_BROWSER) {
-    const { pathname, hash } = w.location;
+    const { pathname, hash } = window.location;
     if (pathname === "/" && hash === "") {
-      w.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
+      window.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
     }
   }
   const id = ":-r-" + (opts.name || "");
@@ -83,7 +82,7 @@ const createRouter = (opts = {}) => {
   return ({ path, component }) => {
     let res_path = "";
     if (IS_BROWSER) {
-      const { pathname, hash } = w.location;
+      const { pathname, hash } = window.location;
       res_path = getPathname(pathname, hash);
     } else if (opts.ssr_path) {
       res_path = opts.ssr_path;

@@ -54,7 +54,6 @@ const route = { lookup: {} } as {
   hash?: boolean;
   ssr_path?: string;
 };
-const w = window;
 export const matchRoute = (path: string, route: { [k: string]: TRet }) => {
   for (const key in route) {
     if (path === key || createPattern(key).test(path)) return route[key];
@@ -109,9 +108,9 @@ export const createRouter = (
   opts: RouterOptions = {},
 ): FC<{ path: string; component: (route: RouteProps) => JSX.Element }> => {
   if (opts.redirect && IS_BROWSER) {
-    const { pathname, hash } = w.location;
+    const { pathname, hash } = window.location;
     if (pathname === "/" && hash === "") {
-      w.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
+      window.location.href = opts.hash ? "#" + opts.redirect : opts.redirect;
     }
   }
   const id = ":-r-" + (opts.name || "");
@@ -121,7 +120,7 @@ export const createRouter = (
   return ({ path, component }) => {
     let res_path = "";
     if (IS_BROWSER) {
-      const { pathname, hash } = w.location;
+      const { pathname, hash } = window.location;
       res_path = getPathname(pathname, hash);
     } else if (opts.ssr_path) {
       res_path = opts.ssr_path;
