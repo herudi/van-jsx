@@ -2,7 +2,7 @@
   "name": "van-jsx",
   "description": "A small ~1kb JSX libs for building Vanilla App.",
   "author": "Herudi",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "module": "./esm/index.js",
   "main": "./cjs/index.js",
   "unpkg": "./browser/index.js",

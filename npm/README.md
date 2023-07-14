@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/github/license/herudi/van-jsx)](https://github.com/herudi/van-jsx/blob/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/van-jsx)](https://www.npmjs.com/package/van-jsx)
-[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.13&badge=)](https://www.npmjs.com/package/van-jsx)
+[![bundlejs](https://deno.bundlejs.com/?q=esm:van-jsx@0.0.14&badge=)](https://www.npmjs.com/package/van-jsx)
 
 A small ~1kb JSX libs for building Vanilla App.
 
@@ -240,6 +240,12 @@ options.fc = (data) => {
 
 ```jsx
 const Home = lazy(() => import("./home.tsx"));
+```
+
+## Lazy SSR
+
+```jsx
+const Home = await lazySSR(() => import("./home.tsx"));
 ```
 
 ## Example Todo App

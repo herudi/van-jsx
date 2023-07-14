@@ -67,9 +67,6 @@ const isObject = <T>(val: T) => typeof val === "object";
 const isNumber = <T>(val: T) => typeof val === "number";
 const isValue = <T>(val: T) => val != null;
 export const options = {} as Options;
-export const isValidElement = (elem: JSX.Element) => {
-  return IS_BROWSER ? isFunc(elem.append) : (isString(elem) && elem[0] === "<");
-};
 const toStyle = (val: { [k: string]: TRet }) => {
   return Object.keys(val).reduce(
     (a, b) =>
@@ -84,39 +81,16 @@ const toStyle = (val: { [k: string]: TRet }) => {
     "",
   );
 };
-const mutateAttr = (root: HTMLElement, elem: HTMLElement) => {
-  const childs = root.childNodes as TRet;
-  const dests = elem.childNodes as TRet;
-  childs.forEach((src: HTMLElement, i: number) => {
-    const dest = dests[i] as HTMLElement;
-    if (dest) {
-      const srcAttr = src.attributes || [];
-      for (let i = 0; i < srcAttr.length; i++) {
-        const attr = srcAttr[i];
-        if (attr.name && dest.setAttribute) {
-          dest.setAttribute(attr.name, attr.value);
-        }
-      }
-      if (src.childElementCount) {
-        mutateAttr(src, dest);
-      }
-    }
-  });
-};
 export function render(
   elem: JSX.Element,
   root: HTMLElement | null,
-  isHydrate?: boolean,
 ) {
   if (root) {
-    if (isHydrate) mutateAttr(root, elem);
-    root.innerHTML = "";
+    if (root.hasChildNodes()) root.innerHTML = "";
     root.append(elem);
   }
 }
-export function hydrate(elem: JSX.Element, root: HTMLElement | null) {
-  render(elem, root, true);
-}
+export const hydrate = render;
 function removeRef(res: TRet) {
   res.forEach((elem: Element) => {
     if (elem.removeAttribute) elem.removeAttribute("ref");
@@ -224,14 +198,25 @@ export function createHost<R = EObject>(
 export const lazy = <T = TRet>(
   importFn: () => Promise<TRet>,
   fallback?: JSX.Element,
+  modify?: (elem: HTMLElement) => HTMLElement,
 ): FC<T> => {
   return (props) => {
     const Host = createHost();
     Host.controller = ({ lazy }) => {
       importFn().then((mod) => {
-        lazy.replaceWith(mod.default(props));
+        const elem = mod.default(props);
+        lazy.replaceWith(modify ? modify(elem) : elem);
       });
     };
     return h(Host, {}, h("div", { ref: "lazy" }, fallback));
   };
+};
+export const lazySSR = <T = TRet>(
+  importFn: () => Promise<TRet>,
+  fallback?: JSX.Element,
+  modify?: (elem: HTMLElement) => HTMLElement,
+): Promise<FC<T>> => {
+  return IS_BROWSER
+    ? lazy(importFn, fallback, modify)
+    : importFn().then((mod) => mod.default) as TRet;
 };

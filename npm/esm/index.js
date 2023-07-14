@@ -7,45 +7,20 @@ var isObject = (val) => typeof val === "object";
 var isNumber = (val) => typeof val === "number";
 var isValue = (val) => val != null;
 var options = {};
-var isValidElement = (elem) => {
-  return IS_BROWSER ? isFunc(elem.append) : isString(elem) && elem[0] === "<";
-};
 var toStyle = (val) => {
   return Object.keys(val).reduce(
     (a, b) => a + b.split(/(?=[A-Z])/).join("-").toLowerCase() + ":" + (isNumber(val[b]) ? val[b] + "px" : val[b]) + ";",
     ""
   );
 };
-var mutateAttr = (root, elem) => {
-  const childs = root.childNodes;
-  const dests = elem.childNodes;
-  childs.forEach((src, i) => {
-    const dest = dests[i];
-    if (dest) {
-      const srcAttr = src.attributes || [];
-      for (let i2 = 0; i2 < srcAttr.length; i2++) {
-        const attr = srcAttr[i2];
-        if (attr.name && dest.setAttribute) {
-          dest.setAttribute(attr.name, attr.value);
-        }
-      }
-      if (src.childElementCount) {
-        mutateAttr(src, dest);
-      }
-    }
-  });
-};
-function render(elem, root, isHydrate) {
+function render(elem, root) {
   if (root) {
-    if (isHydrate)
-      mutateAttr(root, elem);
-    root.innerHTML = "";
+    if (root.hasChildNodes())
+      root.innerHTML = "";
     root.append(elem);
   }
 }
-function hydrate(elem, root) {
-  render(elem, root, true);
-}
+var hydrate = render;
 function removeRef(res) {
   res.forEach((elem) => {
     if (elem.removeAttribute)
@@ -139,16 +114,20 @@ function createHost(type) {
   };
   return host;
 }
-var lazy = (importFn, fallback) => {
+var lazy = (importFn, fallback, modify) => {
   return (props) => {
     const Host = createHost();
     Host.controller = ({ lazy: lazy2 }) => {
       importFn().then((mod) => {
-        lazy2.replaceWith(mod.default(props));
+        const elem = mod.default(props);
+        lazy2.replaceWith(modify ? modify(elem) : elem);
       });
     };
     return h(Host, {}, h("div", { ref: "lazy" }, fallback));
   };
+};
+var lazySSR = (importFn, fallback, modify) => {
+  return IS_BROWSER ? lazy(importFn, fallback, modify) : importFn().then((mod) => mod.default);
 };
 export {
   Fragment,
@@ -156,8 +135,8 @@ export {
   createHost,
   h,
   hydrate,
-  isValidElement,
   lazy,
+  lazySSR,
   options,
   render
 };
