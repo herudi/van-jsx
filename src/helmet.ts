@@ -34,9 +34,9 @@ function toHelmet(olds: string[], childs: string[], isFooter: boolean) {
     return item;
   }) as string[];
   const arr = latest.concat(olds);
-  const res = arr.filter((item, i) => arr.indexOf(item) === i).filter((el) =>
-    el[1] !== "/"
-  );
+  const res = arr.filter((item, i) => arr.indexOf(item) === i).filter((el) => {
+    return el !== "</html>" && el !== "</body>";
+  });
   if (isFooter) {
     return res.map((el) => {
       return el.replace(">", ` data-placement="body">`);
